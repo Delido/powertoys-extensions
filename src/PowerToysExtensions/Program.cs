@@ -6,6 +6,7 @@ using PowerToysExtensions.Extensions.Checkmk;
 using PowerToysExtensions.Extensions.Cs2Nades;
 using PowerToysExtensions.Extensions.KeepAwake;
 using PowerToysExtensions.Extensions.LauncherKey;
+using PowerToysExtensions.Extensions.Mtr;
 using PowerToysExtensions.Extensions.OneDev;
 using PowerToysExtensions.Extensions.PowerPlan;
 using PowerToysExtensions.Extensions.SnipeIt;
@@ -38,6 +39,7 @@ public static class Program
         Register(server, () => new Cs2NadesExtension());
         Register(server, () => new AmpExtension());
         Register(server, () => new PowerPlanExtension());
+        Register(server, () => new MtrExtension());
 
         server.Start();
         ExtensionBase.AllDisposed.WaitOne();
