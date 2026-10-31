@@ -1,0 +1,1144 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Defender Schwachstellen</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --surface-2: #f3f2ee;
+  --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --accent: #2a78d6; --accent-rgb: 42,120,214; --accent-wash: rgba(42,120,214,0.10);
+  --s-new: #eb6834; --s-fixed: #2a78d6;
+  --crit: #d03b3b; --high: #ec835a; --med: #fab219; --low: #a3a29b;
+  --good-ink: #006300; --bad-ink: #b42323;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --surface-2: #232321;
+    --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --accent: #3987e5; --accent-rgb: 57,135,229; --accent-wash: rgba(57,135,229,0.14);
+    --s-new: #d95926; --s-fixed: #3987e5; --low: #6f6e68; --good-ink: #0ca30c; --bad-ink: #e66767;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --surface-2: #232321;
+  --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+  --accent: #3987e5; --accent-rgb: 57,135,229; --accent-wash: rgba(57,135,229,0.14);
+  --s-new: #d95926; --s-fixed: #3987e5; --low: #6f6e68; --good-ink: #0ca30c; --bad-ink: #e66767;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.page { max-width: 1480px; margin: 0 auto; padding: 20px 24px 48px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 14px; }
+h1 { font-size: 22px; margin: 0; font-weight: 600; }
+h2 { font-size: 15px; margin: 0; font-weight: 600; }
+.sub { color: var(--ink-2); }
+.badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--border); }
+.badge.demo { background: #fab219; color: #0b0b0b; border-color: transparent; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; min-width: 0; }
+.card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+.card-head .hint { font-size: 12px; color: var(--muted); }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.num { font-variant-numeric: tabular-nums; text-align: right; }
+a { color: var(--accent); }
+.linkbtn { background: none; border: none; padding: 0; color: var(--accent); cursor: pointer; font: inherit; text-decoration: underline; }
+
+/* Filter */
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+select, input[type=search] { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; height: 32px; }
+select { max-width: 200px; }
+select.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+input[type=search] { flex: 1 1 220px; min-width: 180px; }
+button { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; cursor: pointer; height: 32px; }
+button:hover { background: var(--surface-2); }
+.filter-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--ink-2); margin-bottom: 14px; min-height: 32px; }
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: 1.7fr repeat(5, 1fr); gap: 12px; }
+.kpi .label { font-size: 12px; color: var(--ink-2); }
+.kpi .value { font-size: 28px; font-weight: 600; margin-top: 2px; line-height: 1.2; }
+.kpi .hint { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.kpi.hero .row { display: flex; align-items: end; gap: 16px; }
+.kpi.hero .value { font-size: 48px; line-height: 1.05; }
+.kpi.hero .row > div { flex: none; }
+.kpi.hero svg { flex: 1 1 0; min-width: 0; width: 100%; max-width: 200px; height: 44px; overflow: visible; margin-bottom: 6px; }
+.delta { font-size: 13px; font-variant-numeric: tabular-nums; }
+.delta .up { color: var(--bad-ink); }
+.delta .down { color: var(--good-ink); }
+.sevbar { display: flex; gap: 2px; height: 12px; margin-top: 10px; }
+.sevbar > div { min-width: 2px; }
+.sevbar > div:first-child { border-radius: 4px 0 0 4px; }
+.sevbar > div:last-child { border-radius: 0 4px 4px 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-2); margin-top: 8px; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; background: var(--c); }
+.legend.lines span::before { height: 2px; width: 14px; vertical-align: 3px; }
+
+/* Tabs */
+.tabs { display: flex; flex-wrap: wrap; gap: 2px; border-bottom: 1px solid var(--border); margin: 18px 0 14px; }
+.tabs button { border: none; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 8px 14px; height: auto; color: var(--ink-2); font-size: 14px; }
+.tabs button.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+.tabs .count { color: var(--muted); font-weight: 400; margin-left: 4px; font-size: 12px; }
+.panel { display: none; }
+.panel.active { display: block; }
+.panel-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.panel-head p { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; max-width: 920px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid2 > .wide { grid-column: span 2; }
+
+/* Tabellen */
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; background: var(--surface); }
+th, td { padding: 7px 10px; border-bottom: 1px solid var(--grid); text-align: left; vertical-align: middle; white-space: nowrap; }
+td.wraptext { white-space: normal; min-width: 220px; }
+th { font-size: 12px; font-weight: 600; color: var(--ink-2); position: sticky; top: 0; background: var(--surface); z-index: 1; }
+th.sortable { cursor: pointer; user-select: none; }
+th.sorted::after { content: " ↓"; color: var(--accent); }
+th.sorted.asc::after { content: " ↑"; }
+.table-wrap.click tbody tr { cursor: pointer; }
+.table-wrap.click tbody tr:hover { background: var(--accent-wash); }
+.more { margin-top: 10px; }
+.sev { display: inline-flex; align-items: center; gap: 5px; }
+.sev::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.chips { display: inline-flex; gap: 4px; }
+.chip { display: inline-block; min-width: 26px; padding: 0 5px; border-radius: 4px; font-size: 12px; text-align: center; font-variant-numeric: tabular-nums; }
+.chip.crit { background: var(--crit); color: #fff; }
+.chip.high { background: var(--high); color: #fff; }
+.chip.zero { background: var(--surface-2); color: var(--muted); }
+.newtag { display: inline-block; font-size: 10px; font-weight: 600; padding: 0 5px; border-radius: 4px; background: var(--s-new); color: #fff; margin-left: 6px; vertical-align: 1px; }
+.exp { font-size: 12px; }
+.exp.e0 { color: var(--muted); }
+.exp.e1, .exp.e2, .exp.e3 { font-weight: 600; }
+.exp.e1::before, .exp.e2::before, .exp.e3::before { content: "⚠ "; color: var(--crit); }
+.prio { display: flex; align-items: center; gap: 8px; min-width: 150px; }
+.prio .track { flex: 1; height: 8px; background: var(--accent-wash); border-radius: 4px; overflow: hidden; }
+.prio .fill { height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; }
+.prio .val { width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+.no { color: var(--bad-ink); }
+.tag { display: inline-block; font-size: 11px; padding: 0 6px; border: 1px solid var(--border); border-radius: 4px; margin-right: 3px; color: var(--ink-2); }
+.empty { padding: 28px; text-align: center; color: var(--muted); }
+
+/* Heatmaps */
+.heat { width: auto; min-width: 100%; background: none; }
+.heat th, .heat td { border: none; padding: 0; }
+.heat thead th { font-weight: 500; font-size: 11px; color: var(--ink-2); padding: 0 4px 6px; text-align: center; white-space: normal; vertical-align: bottom; max-width: 110px; position: static; background: none; }
+.heat tbody th { font-weight: 500; font-size: 12px; color: var(--ink-2); padding-right: 10px; text-align: right; position: static; background: none; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+.heat td { padding: 1px; }
+.heat .cell { height: 34px; min-width: 52px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-variant-numeric: tabular-nums; cursor: pointer; background: rgba(var(--accent-rgb), var(--a)); color: var(--ink); }
+.heat .cell.dark { color: #fff; }
+.heat .cell.zero { background: var(--surface-2); color: var(--muted); cursor: default; }
+.heat .cell:not(.zero):hover { outline: 2px solid var(--ink); outline-offset: -2px; }
+
+/* Charts */
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: inherit; }
+.chart text.lbl { fill: var(--ink-2); font-size: 12px; }
+.chart .gridline { stroke: var(--grid); stroke-width: 1; }
+.chart .baseline { stroke: var(--axis); stroke-width: 1; }
+.chart .hit { cursor: pointer; }
+.tooltip { position: fixed; z-index: 60; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); display: none; min-width: 150px; max-width: 320px; }
+.tooltip .t { font-weight: 600; margin-bottom: 4px; }
+.tooltip .r { display: flex; justify-content: space-between; gap: 14px; font-variant-numeric: tabular-nums; }
+.tooltip .r span:first-child::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; background: var(--c, transparent); }
+.newlist { list-style: none; margin: 0; padding: 0; }
+.newlist li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--grid); }
+.newlist li:last-child { border-bottom: none; }
+.bigdelta { display: flex; gap: 24px; margin-bottom: 10px; }
+.bigdelta b { display: block; font-size: 26px; font-weight: 600; }
+.bigdelta span { font-size: 12px; color: var(--ink-2); }
+
+/* Detail-Drawer */
+.drawer-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.25); display: none; z-index: 30; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(760px, 100vw); background: var(--surface); border-left: 1px solid var(--border); z-index: 40; overflow-y: auto; padding: 20px 24px; transform: translateX(100%); transition: transform .15s ease; }
+.drawer.open { transform: none; }
+.drawer-bg.open { display: block; }
+.drawer h2 { font-size: 18px; margin-right: 90px; word-break: break-word; }
+.drawer .tools { position: absolute; top: 16px; right: 16px; display: flex; gap: 6px; }
+.drawer h3 { font-size: 13px; margin: 20px 0 6px; color: var(--ink-2); }
+.facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 12px; }
+.facts div { background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
+.facts b { display: block; font-size: 18px; font-weight: 600; }
+.facts span { font-size: 12px; color: var(--ink-2); }
+.drawer table td, .drawer table th { padding: 5px 8px; vertical-align: top; }
+.drawer tr.has-sub td { border-bottom: none; padding-bottom: 2px; }
+.drawer tr.sub td { padding-top: 0; padding-left: 20px; }
+.paths { white-space: normal; }
+.paths code { display: block; font: 11px/1.4 ui-monospace, Consolas, monospace; color: var(--ink-2); word-break: break-all; }
+.paths details { margin-top: 2px; font-size: 11px; color: var(--muted); }
+.paths summary { cursor: pointer; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--page); padding: 8px 14px; border-radius: 8px; font-size: 13px; z-index: 70; display: none; }
+
+@media (max-width: 1200px) { .kpis { grid-template-columns: repeat(3, 1fr); } .kpi.hero { grid-column: span 3; } }
+@media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } .grid2 > .wide { grid-column: auto; } }
+@media (max-width: 640px) { .page { padding: 16px; } .kpis { grid-template-columns: 1fr 1fr; } .kpi.hero { grid-column: span 2; } select { max-width: none; flex: 1 1 140px; } }
+@media print { .filters, .tabs, .more, button { display: none !important; } .panel { display: block !important; break-before: page; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Schwachstellen-Übersicht</h1>
+    <span class="sub" id="meta-line"></span>
+    <span id="meta-badges"></span>
+  </header>
+
+  <section class="filters" aria-label="Filter">
+    <select id="f-group" aria-label="Gerätegruppe"></select>
+    <select id="f-tag" aria-label="Tag"></select>
+    <select id="f-os" aria-label="Betriebssystem"></select>
+    <select id="f-sev" aria-label="Schweregrad">
+      <option value="">Alle Schweregrade</option>
+      <option value="ge1">ab Mittel</option>
+      <option value="ge2">ab Hoch</option>
+      <option value="eq3">nur Kritisch</option>
+      <option value="eq2">nur Hoch</option>
+      <option value="eq1">nur Mittel</option>
+      <option value="eq0">nur Niedrig</option>
+    </select>
+    <select id="f-exp" aria-label="Exploit">
+      <option value="">Exploit: alle</option>
+      <option value="any">mit bekanntem Exploit</option>
+      <option value="eq0">ohne bekannten Exploit</option>
+      <option value="eq1">Exploit öffentlich</option>
+      <option value="eq2">Exploit verifiziert</option>
+      <option value="eq3">in Exploit-Kit</option>
+    </select>
+    <select id="f-age" aria-label="Neu"></select>
+    <input type="search" id="f-q" placeholder="Suche: Gerät, Software, CVE oder Pfad …" aria-label="Suche">
+    <button id="f-reset" type="button">Zurücksetzen</button>
+  </section>
+  <div class="filter-status"><span id="filter-status"></span><button id="f-export" type="button" title="Alle Funde der aktuellen Filterung mit Fundstellen als CSV">Alle Funde als CSV</button></div>
+
+  <section class="kpis" id="kpis"></section>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="overview" class="active">Übersicht</button>
+    <button data-tab="actions">Maßnahmen <span class="count" id="c-actions"></span></button>
+    <button data-tab="cves">CVEs <span class="count" id="c-cves"></span></button>
+    <button data-tab="devices">Geräte <span class="count" id="c-devices"></span></button>
+    <button data-tab="groups">Gruppen <span class="count" id="c-groups"></span></button>
+    <button data-tab="trend">Verlauf</button>
+  </nav>
+
+  <section class="panel active" id="p-overview">
+    <div class="grid2">
+      <div class="card chart">
+        <div class="card-head"><h2>Top 10 Maßnahmen</h2><button class="linkbtn small" data-goto="actions">alle anzeigen</button></div>
+        <div id="ch-top"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Schweregrad × Exploit</h2><span class="hint">eindeutige CVEs · Klick filtert</span></div>
+        <div id="hm-sevexp"></div>
+        <p class="small muted" style="margin:10px 0 0">Oben rechts liegt das größte Risiko: kritische Lücken, für die Angriffswerkzeuge im Umlauf sind.</p>
+      </div>
+      <div class="card chart">
+        <div class="card-head"><h2>Alter der offenen Funde</h2><span class="hint">seit erstmals gesehen</span></div>
+        <div id="ch-age"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2 id="new-title">Seit dem letzten Lauf</h2><button class="linkbtn small" data-goto="trend">Verlauf</button></div>
+        <div id="new-box"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-actions">
+    <div class="panel-head">
+      <div>
+        <h2>Maßnahmen nach Software, sortiert nach Priorität</h2>
+        <p>Jede Zeile ist ein Update bzw. eine Maßnahme. Die Priorität summiert über alle betroffenen Geräte und CVEs: Schweregrad (Kritisch 10, Hoch 5, Mittel 2, Niedrig 0,5) × Exploit-Faktor (kein Exploit 1, öffentlich 1,5, verifiziert 2,5, Exploit-Kit 3). Ganz oben steht also, was mit einem Update am meisten Risiko entfernt.</p>
+      </div>
+      <button data-csv="actions" type="button">CSV exportieren</button>
+    </div>
+    <div class="table-wrap click" id="t-actions"></div>
+  </section>
+
+  <section class="panel" id="p-cves">
+    <div class="panel-head">
+      <div><h2>CVEs</h2><p>Eindeutige Schwachstellen mit Anzahl betroffener Geräte. Zeile anklicken für Details, Fundstellen und Links.</p></div>
+      <button data-csv="cves" type="button">CSV exportieren</button>
+    </div>
+    <div class="table-wrap click" id="t-cves"></div>
+  </section>
+
+  <section class="panel" id="p-devices">
+    <div class="panel-head">
+      <div><h2>Geräte</h2><p>Geräte mit offenen Schwachstellen, sortiert nach Priorität (gleiche Gewichtung wie bei den Maßnahmen).</p></div>
+      <button data-csv="devices" type="button">CSV exportieren</button>
+    </div>
+    <div class="table-wrap click" id="t-devices"></div>
+  </section>
+
+  <section class="panel" id="p-groups">
+    <div class="panel-head">
+      <div><h2>Gerätegruppen</h2><p>Offene Funde pro Gerätegruppe. Ein Fund ist eine CVE auf einem Gerät.</p></div>
+      <button data-csv="groups" type="button">CSV exportieren</button>
+    </div>
+    <div class="grid2" style="margin-bottom:12px">
+      <div class="card chart wide">
+        <div class="card-head"><h2>Funde pro Gruppe nach Schweregrad</h2></div>
+        <div id="ch-groups"></div>
+      </div>
+      <div class="card wide">
+        <div class="card-head"><h2>Rückstand: Gruppe × Software</h2><span class="hint">Zahl = betroffene Geräte · Farbe = Priorität · Klick öffnet Details</span></div>
+        <div class="table-wrap" id="hm-groupsw"></div>
+      </div>
+    </div>
+    <div class="table-wrap click" id="t-groups"></div>
+  </section>
+
+  <section class="panel" id="p-trend">
+    <div class="panel-head">
+      <div><h2>Verlauf</h2><p>Die Diagramme gelten für den gesamten Mandanten, die Filter wirken hier nicht. Jeder Lauf des Skripts legt einen Tagespunkt an. Neue und behobene Funde pro Tag kommen aus der Delta-API von Defender (letzte 14 Tage).</p></div>
+    </div>
+    <div class="grid2">
+      <div class="card chart"><div class="card-head"><h2>Offene Funde nach Schweregrad</h2></div><div id="ch-history"></div></div>
+      <div class="card chart"><div class="card-head"><h2>Neue und behobene Funde pro Tag</h2></div><div id="ch-changes"></div></div>
+      <div class="card wide">
+        <div class="card-head"><h2 id="fixed-title">Seit dem letzten Lauf behoben</h2><button data-csv="fixed" type="button">CSV exportieren</button></div>
+        <div class="table-wrap" id="t-fixed"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="drawer-bg" id="drawer-bg"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="tools">
+    <button id="drawer-link" type="button" title="Direktlink auf diese Ansicht kopieren">Link</button>
+    <button id="drawer-close" type="button" aria-label="Schließen">✕</button>
+  </div>
+  <div id="drawer-body"></div>
+</aside>
+<div class="tooltip" id="tooltip"></div>
+<div class="toast" id="toast"></div>
+
+<script type="application/json" id="report-data">__REPORT_DATA__</script>
+<script>
+"use strict";
+const D = JSON.parse(document.getElementById("report-data").textContent);
+
+const SEV = ["Niedrig", "Mittel", "Hoch", "Kritisch"];
+const SEV_VAR = ["--low", "--med", "--high", "--crit"];
+const EXP = ["Kein bekannter Exploit", "Exploit öffentlich", "Exploit verifiziert", "Exploit-Kit"];
+const EXP_SHORT = ["–", "Öffentlich", "Verifiziert", "Exploit-Kit"];
+const W_SEV = [0.5, 2, 5, 10];
+const W_EXP = [1, 1.5, 2.5, 3];
+const EXPOSURE = { None: "Keine", Low: "Niedrig", Medium: "Mittel", High: "Hoch" };
+const AGE_BUCKETS = [[7, "0–7 Tage"], [30, "8–30 Tage"], [90, "31–90 Tage"], [180, "91–180 Tage"], [Infinity, "> 180 Tage"]];
+const PAGE = 200;
+
+const generated = new Date(D.meta.generated);
+const today = Math.floor(generated.getTime() / 86400000);
+const HAS_PREV = !!D.meta.prevRun;
+const prevRun = HAS_PREV ? new Date(D.meta.prevRun) : null;
+const nf = new Intl.NumberFormat("de-DE");
+const fmt = n => nf.format(Math.round(n));
+const compact = n => n >= 10000 ? nf.format(Math.round(n / 1000)) + " Tsd." : nf.format(Math.round(n));
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const dayStr = d => new Date(d * 86400000).toLocaleDateString("de-DE");
+const dateTime = d => d.toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" });
+const pretty = s => String(s || "").replace(/_/g, " ").replace(/(^|[\s-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+const swName = sw => {
+  const v = pretty(sw.v), n = pretty(sw.n);
+  return n.toLowerCase().startsWith(v.toLowerCase()) ? n : v + " " + n;
+};
+const swAction = sw => sw.r ? sw.r + (sw.rv && !sw.r.includes(sw.rv) ? " → " + sw.rv : "") : (sw.u ? "Update installieren" : "Kein Update verfügbar, Workaround/Ersatz prüfen");
+const sum = a => a.reduce((x, y) => x + y, 0);
+
+// Suchindex und Nachschlagetabellen
+D.devices.forEach(d => { d._q = (d.n + " " + d.g + " " + d.os + " " + (d.t || []).join(" ")).toLowerCase(); });
+D.sw.forEach(s => { s._name = swName(s); s._key = s.v + "|" + s.n; s._q = (s.v + " " + s.n + " " + s._name + " " + s.r).toLowerCase(); });
+D.cves.forEach(c => { c._q = c.id.toLowerCase(); });
+const cveById = new Map(D.cves.map((c, i) => [c.id.toLowerCase(), i]));
+const devByName = new Map(D.devices.map((d, i) => [d.n.toLowerCase(), i]));
+const swByKey = new Map(D.sw.map((s, i) => [s._key.toLowerCase(), i]));
+
+// Fundstellen (Datei- und Registry-Pfade) je Gerät|Software|Version
+const EV = new Map(), EVQ = new Map();
+for (const [d, s, v, ps] of D.ev || []) {
+  const list = ps.map(i => D.paths[i]);
+  EV.set(d + "|" + s + "|" + v, list);
+  EVQ.set(d + "|" + s + "|" + v, list.join("\n").toLowerCase());
+}
+const evidenceOf = (d, s, v) => EV.get(d + "|" + s + "|" + v) || [];
+function pathsHtml(d, s, v) {
+  const list = evidenceOf(d, s, v);
+  if (!list.length) return `<span class="muted small">keine Pfade gemeldet</span>`;
+  const files = list.filter(p => !/^HKEY_/i.test(p)), reg = list.filter(p => /^HKEY_/i.test(p));
+  return `<div class="paths">` +
+    files.map(p => `<code>${esc(p)}</code>`).join("") +
+    (reg.length ? `<details><summary>${reg.length} Registry-${reg.length === 1 ? "Eintrag" : "Einträge"}</summary>${reg.map(p => `<code>${esc(p)}</code>`).join("")}</details>` : "") +
+    `</div>`;
+}
+
+// "Neu" heißt: seit dem letzten Lauf (falls bekannt), sonst in den letzten 7 Tagen erstmals gesehen
+const isNew = HAS_PREV ? f => f[5] === 1 : f => today - f[4] <= 7;
+const NEW_LABEL = HAS_PREV ? "Neu seit letztem Lauf" : "Neu (7 Tage)";
+const newTag = f => isNew(f) ? `<span class="newtag">NEU</span>` : "";
+
+/* ---------- Filter ---------- */
+const FILTER_DEFAULT = { group: "", tag: "", os: "", sev: "", exp: "", age: "", q: "" };
+const state = Object.assign({ tab: "overview" }, FILTER_DEFAULT);
+const uniq = arr => [...new Set(arr)].sort((a, b) => a.localeCompare(b, "de"));
+function fillSelect(id, values, allLabel) {
+  document.getElementById(id).innerHTML = `<option value="">${allLabel}</option>` + values.map(v => `<option>${esc(v)}</option>`).join("");
+}
+fillSelect("f-group", uniq(D.devices.map(d => d.g)), "Alle Gruppen");
+fillSelect("f-tag", uniq(D.devices.flatMap(d => d.t || [])), "Alle Tags");
+fillSelect("f-os", uniq(D.devices.map(d => d.os)), "Alle Systeme");
+if (!D.devices.some(d => (d.t || []).length)) document.getElementById("f-tag").style.display = "none";
+document.getElementById("f-age").innerHTML = `<option value="">Neu &amp; alt</option>` +
+  (HAS_PREV ? `<option value="run">neu seit letztem Lauf</option>` : "") +
+  `<option value="7">erstmals gesehen ≤ 7 Tage</option><option value="30">erstmals gesehen ≤ 30 Tage</option><option value="old90">älter als 90 Tage</option>`;
+
+const FILTER_IDS = { group: "f-group", tag: "f-tag", os: "f-os", sev: "f-sev", exp: "f-exp", age: "f-age", q: "f-q" };
+function syncControls() {
+  for (const k in FILTER_IDS) {
+    const el = document.getElementById(FILTER_IDS[k]);
+    el.value = state[k];
+    el.classList.toggle("on", !!state[k] && el.tagName === "SELECT");
+  }
+}
+for (const k of ["group", "tag", "os", "sev", "exp", "age"]) {
+  document.getElementById(FILTER_IDS[k]).addEventListener("change", e => { state[k] = e.target.value; syncControls(); update(); });
+}
+let qTimer;
+document.getElementById("f-q").addEventListener("input", e => {
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => { state.q = e.target.value.trim(); update(); }, 200);
+});
+document.getElementById("f-reset").addEventListener("click", () => { Object.assign(state, FILTER_DEFAULT); syncControls(); update(); });
+function setFilters(patch, tab) {
+  Object.assign(state, patch);
+  syncControls();
+  update();
+  if (tab) showTab(tab);
+}
+
+function filterFindings() {
+  const { group, tag, os, sev, exp, age } = state;
+  const q = state.q.toLowerCase();
+  const sevOp = sev.slice(0, 2), sevV = +sev[2];
+  const expOp = exp === "any" ? "any" : exp.slice(0, 2), expV = +exp[2];
+  if (!group && !tag && !os && !sev && !exp && !age && !q) return D.f;
+  const out = [];
+  for (const f of D.f) {
+    const d = D.devices[f[0]], c = D.cves[f[2]];
+    if (group && d.g !== group) continue;
+    if (os && d.os !== os) continue;
+    if (tag && !(d.t || []).includes(tag)) continue;
+    if (sev && (sevOp === "ge" ? c.s < sevV : c.s !== sevV)) continue;
+    if (exp && (expOp === "any" ? c.e === 0 : c.e !== expV)) continue;
+    if (age) {
+      if (age === "run" && f[5] !== 1) continue;
+      if (age === "old90" && today - f[4] <= 90) continue;
+      if ((age === "7" || age === "30") && today - f[4] > +age) continue;
+    }
+    if (q && !(d._q.includes(q) || D.sw[f[1]]._q.includes(q) || c._q.includes(q) || (EVQ.get(f[0] + "|" + f[1] + "|" + f[3]) || "").includes(q))) continue;
+    out.push(f);
+  }
+  return out;
+}
+
+/* ---------- Aggregation ---------- */
+function aggregate(fs) {
+  const sw = new Map(), cve = new Map(), dev = new Map(), grp = new Map();
+  const get = (m, k, init) => { let v = m.get(k); if (v === undefined) { v = init(); m.set(k, v); } return v; };
+  const sevCount = [0, 0, 0, 0];
+  const ageSev = AGE_BUCKETS.map(() => [0, 0, 0, 0]);
+  const matrix = [0, 1, 2, 3].map(() => [0, 1, 2, 3].map(() => ({ cves: new Set(), n: 0 })));
+  let exploitable = 0, recent = 0;
+  for (const f of fs) {
+    const di = f[0], si = f[1], ci = f[2];
+    const c = D.cves[ci];
+    const w = W_SEV[c.s] * W_EXP[c.e];
+    const fresh = isNew(f);
+    sevCount[c.s]++;
+    if (c.e > 0) exploitable++;
+    if (fresh) recent++;
+    if (f[4]) { const age = today - f[4]; ageSev[AGE_BUCKETS.findIndex(b => age <= b[0])][c.s]++; }
+    const m = matrix[c.s][c.e]; m.cves.add(ci); m.n++;
+
+    const a = get(sw, si, () => ({ i: si, devs: new Set(), cves: new Set(), vers: new Set(), score: 0, n: 0, recent: 0, maxE: 0 }));
+    a.devs.add(di); a.cves.add(ci); a.vers.add(f[3]); a.score += w; a.n++; if (fresh) a.recent++; if (c.e > a.maxE) a.maxE = c.e;
+
+    const b = get(cve, ci, () => ({ i: ci, devs: new Set(), sws: new Set(), first: f[4] || Infinity, recent: 0 }));
+    b.devs.add(di); b.sws.add(si); if (f[4] && f[4] < b.first) b.first = f[4]; if (fresh) b.recent++;
+
+    const d = get(dev, di, () => ({ i: di, cves: new Set(), sws: new Set(), sev: [0, 0, 0, 0], score: 0, maxE: 0, n: 0, recent: 0 }));
+    d.cves.add(ci); d.sws.add(si); d.sev[c.s]++; d.score += w; d.n++; if (fresh) d.recent++; if (c.e > d.maxE) d.maxE = c.e;
+
+    const g = get(grp, D.devices[di].g, () => ({ g: D.devices[di].g, devs: new Set(), cves: new Set(), sev: [0, 0, 0, 0], score: 0, n: 0, exp: 0, sw: new Map() }));
+    g.devs.add(di); g.cves.add(ci); g.sev[c.s]++; g.score += w; g.n++; if (c.e > 0) g.exp++;
+    const gs = get(g.sw, si, () => ({ devs: new Set(), score: 0 })); gs.devs.add(di); gs.score += w;
+  }
+  for (const a of sw.values()) {
+    a.sevCves = [0, 0, 0, 0];
+    for (const ci of a.cves) a.sevCves[D.cves[ci].s]++;
+  }
+  return { fs, sw, cve, dev, grp, sevCount, exploitable, recent, ageSev, matrix };
+}
+
+/* ---------- Diagramm-Bausteine ---------- */
+const tip = document.getElementById("tooltip");
+function showTip(e, title, rows) {
+  tip.innerHTML = `<div class="t">${esc(title)}</div>` + rows.map(r => `<div class="r"><span style="--c:${r.c || "transparent"}">${esc(r.l)}</span><span>${esc(r.v)}</span></div>`).join("");
+  tip.style.display = "block";
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + w > innerWidth - 8) x = e.clientX - w - 14;
+  if (y + h > innerHeight - 8) y = e.clientY - h - 14;
+  tip.style.left = x + "px"; tip.style.top = y + "px";
+}
+const hideTip = () => { tip.style.display = "none"; };
+const SVGNS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent) {
+  const n = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function txt(parent, x, y, s, attrs = {}) { const t = el("text", Object.assign({ x, y }, attrs), parent); t.textContent = s; return t; }
+function niceMax(v) {
+  if (v <= 0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v))), m = v / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p;
+}
+const axisNum = n => n >= 1000 ? nf.format(n / 1000) + " Tsd." : nf.format(n);
+// Rechteck mit 4px gerundetem Datenende, eckig an der Basislinie
+function barPath(x, y, w, h, dir) {
+  const r = Math.max(0, Math.min(4, w / 2, h));
+  if (dir === "up") return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+  return `M${x},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h - r}Q${x + w},${y + h} ${x + w - r},${y + h}H${x}Z`;
+}
+const sevLegend = () => `<div class="legend" style="margin:0 0 8px">${[3, 2, 1, 0].map(s => `<span style="--c:var(${SEV_VAR[s]})">${SEV[s]}</span>`).join("")}</div>`;
+function emptyBox(host, msg) { host.innerHTML = `<div class="empty">${msg}</div>`; }
+
+// Horizontale (gestapelte) Balken. items: {label, parts:[{v, color, name}], total, valueLabel, tip, onClick}
+function hbars(host, items, opts = {}) {
+  host.innerHTML = opts.legend || "";
+  if (!items.length) return emptyBox(host, "Keine Daten für die aktuellen Filter.");
+  const W = opts.width || 640, rowH = opts.rowH || 26, labelW = opts.labelW || 170, valW = 64, bh = Math.min(18, rowH - 8);
+  const H = items.length * rowH;
+  const max = Math.max(...items.map(d => d.total));
+  const scale = (W - labelW - valW) / max;
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": opts.aria || "" }, host);
+  items.forEach((d, i) => {
+    const y = i * rowH, by = y + (rowH - bh) / 2;
+    const maxChars = Math.floor(labelW / 6.6);
+    txt(svg, labelW - 10, y + rowH / 2 + 4, d.label.length > maxChars ? d.label.slice(0, maxChars - 1) + "…" : d.label, { "text-anchor": "end", class: "lbl" });
+    let x = labelW;
+    const parts = d.parts.filter(p => p.v > 0);
+    parts.forEach((p, k) => {
+      const last = k === parts.length - 1;
+      const w = Math.max(1, p.v * scale - (last ? 0 : 2));
+      const node = last ? el("path", { d: barPath(x, by, w, bh, "right") }, svg) : el("rect", { x, y: by, width: w, height: bh }, svg);
+      node.style.fill = p.color;
+      x += w + 2;
+    });
+    txt(svg, x + 4, y + rowH / 2 + 4, d.valueLabel ?? fmt(d.total), { class: "lbl" });
+    const hit = el("rect", { x: 0, y, width: W, height: rowH, fill: "transparent", class: d.onClick ? "hit" : "" }, svg);
+    hit.addEventListener("mousemove", e => showTip(e, d.label, d.tip));
+    hit.addEventListener("mouseleave", hideTip);
+    if (d.onClick) hit.addEventListener("click", () => { hideTip(); d.onClick(); });
+  });
+  el("line", { x1: labelW, x2: labelW, y1: 0, y2: H, class: "baseline" }, svg);
+}
+
+// Säulen; stacked=true stapelt die Serien, sonst gruppiert
+function columns(host, labels, series, opts = {}) {
+  host.innerHTML = `<div class="legend" style="margin:0 0 8px">${series.map(s => `<span style="--c:${s.color}">${s.label}</span>`).join("")}</div>`;
+  if (!labels.length) return emptyBox(host, opts.empty || "Keine Daten");
+  const W = 640, H = opts.height || 240, L = 56, R = 12, T = 8, B = 26;
+  const totals = labels.map((_, i) => opts.stacked ? sum(series.map(s => s.values[i])) : Math.max(...series.map(s => s.values[i])));
+  const max = niceMax(Math.max(...totals));
+  const band = (W - L - R) / labels.length;
+  const ys = v => T + (1 - v / max) * (H - T - B);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": opts.aria || "" }, host);
+  for (let k = 0; k <= 4; k++) {
+    const v = max * k / 4, y = ys(v);
+    el("line", { x1: L, x2: W - R, y1: y, y2: y, class: k === 0 ? "baseline" : "gridline" }, svg);
+    txt(svg, L - 8, y + 4, axisNum(v), { "text-anchor": "end" });
+  }
+  const step = Math.ceil(labels.length / (opts.maxTicks || 8));
+  labels.forEach((l, i) => {
+    const cx = L + band * i + band / 2;
+    if (i % step === 0 || i === labels.length - 1) txt(svg, cx, H - 6, l, { "text-anchor": "middle" });
+    if (opts.stacked) {
+      const bw = Math.min(opts.barW || 40, band - 12);
+      let base = H - B;
+      const parts = series.map(s => s.values[i]).map((v, k) => ({ v, k })).filter(p => p.v > 0);
+      parts.forEach((p, idx) => {
+        const h = (p.v / max) * (H - T - B), last = idx === parts.length - 1;
+        const hh = Math.max(1, h - (last ? 0 : 2));
+        const node = last ? el("path", { d: barPath(cx - bw / 2, base - hh, bw, hh, "up") }, svg) : el("rect", { x: cx - bw / 2, y: base - hh, width: bw, height: hh }, svg);
+        node.style.fill = series[p.k].color;
+        base -= h;
+      });
+      if (totals[i]) txt(svg, cx, base - 6, compact(totals[i]), { "text-anchor": "middle", class: "lbl" });
+    } else {
+      const bw = Math.min(14, (band - 8) / series.length - 2), gw = series.length * bw + (series.length - 1) * 2;
+      series.forEach((s, k) => {
+        const v = s.values[i]; if (!v) return;
+        const x = cx - gw / 2 + k * (bw + 2), y = ys(v);
+        el("path", { d: barPath(x, y, bw, H - B - y, "up") }, svg).style.fill = s.color;
+      });
+    }
+    const hit = el("rect", { x: L + band * i, y: T, width: band, height: H - T - B, fill: "transparent", class: opts.onClick ? "hit" : "" }, svg);
+    const rows = series.map(s => ({ l: s.label, v: fmt(s.values[i]), c: s.color }));
+    if (opts.stacked) rows.push({ l: "Gesamt", v: fmt(totals[i]) });
+    hit.addEventListener("mousemove", e => showTip(e, l, rows));
+    hit.addEventListener("mouseleave", hideTip);
+    if (opts.onClick) hit.addEventListener("click", () => { hideTip(); opts.onClick(i); });
+  });
+}
+
+function lineChart(host, labels, series, aria) {
+  host.innerHTML = "";
+  if (labels.length < 2) return emptyBox(host, "Noch zu wenige Datenpunkte. Der Verlauf füllt sich mit jedem Lauf des Skripts (z. B. täglich per Aufgabenplanung).");
+  const W = 640, H = 240, L = 56, R = 16, T = 8, B = 26;
+  const max = niceMax(Math.max(...series.flatMap(s => s.values)));
+  const xs = i => L + i * (W - L - R) / (labels.length - 1);
+  const ys = v => T + (1 - v / max) * (H - T - B);
+  host.insertAdjacentHTML("beforeend", `<div class="legend lines" style="margin:0 0 8px">${series.map(s => `<span style="--c:${s.color}">${s.label}</span>`).join("")}</div>`);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": aria }, host);
+  for (let k = 0; k <= 4; k++) {
+    const v = max * k / 4, y = ys(v);
+    el("line", { x1: L, x2: W - R, y1: y, y2: y, class: k === 0 ? "baseline" : "gridline" }, svg);
+    txt(svg, L - 8, y + 4, axisNum(v), { "text-anchor": "end" });
+  }
+  const step = Math.ceil(labels.length / 6);
+  labels.forEach((l, i) => { if (i % step === 0 || i === labels.length - 1) txt(svg, xs(i), H - 6, l, { "text-anchor": "middle" }); });
+  series.forEach(s => {
+    el("path", { d: s.values.map((v, i) => (i ? "L" : "M") + xs(i) + "," + ys(v)).join(""), fill: "none", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg).style.stroke = s.color;
+    const li = s.values.length - 1;
+    const dot = el("circle", { cx: xs(li), cy: ys(s.values[li]), r: 4, "stroke-width": 2 }, svg);
+    dot.style.fill = s.color; dot.style.stroke = css("--surface");
+  });
+  const cross = el("line", { y1: T, y2: H - B, class: "baseline", visibility: "hidden" }, svg);
+  const dots = series.map(s => { const c = el("circle", { r: 4, "stroke-width": 2, visibility: "hidden" }, svg); c.style.fill = s.color; c.style.stroke = css("--surface"); return c; });
+  const hit = el("rect", { x: L, y: T, width: W - L - R, height: H - T - B, fill: "transparent" }, svg);
+  hit.addEventListener("mousemove", e => {
+    const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const i = Math.max(0, Math.min(labels.length - 1, Math.round((p.x - L) / (W - L - R) * (labels.length - 1))));
+    cross.setAttribute("x1", xs(i)); cross.setAttribute("x2", xs(i)); cross.setAttribute("visibility", "visible");
+    dots.forEach((d, k) => { d.setAttribute("cx", xs(i)); d.setAttribute("cy", ys(series[k].values[i])); d.setAttribute("visibility", "visible"); });
+    showTip(e, labels[i], series.map(s => ({ l: s.label, v: fmt(s.values[i]), c: s.color })));
+  });
+  hit.addEventListener("mouseleave", () => { hideTip(); cross.setAttribute("visibility", "hidden"); dots.forEach(d => d.setAttribute("visibility", "hidden")); });
+}
+
+function sparkline(values) {
+  if (values.length < 2) return "";
+  const W = 200, H = 44, max = Math.max(...values), min = Math.min(...values), span = max - min || 1;
+  const xs = i => i * W / (values.length - 1), ys = v => 4 + (1 - (v - min) / span) * (H - 8);
+  const d = values.map((v, i) => (i ? "L" : "M") + xs(i).toFixed(1) + "," + ys(v).toFixed(1)).join("");
+  const li = values.length - 1;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Verlauf offene Funde"><path d="${d}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/><circle cx="${xs(li)}" cy="${ys(values[li])}" r="4" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/></svg>`;
+}
+
+// Heatmap als Tabelle. cells[r][c] = {v, label, alpha, tip, onClick}
+function heatmap(host, rowLabels, colLabels, cells) {
+  const handlers = [];
+  const body = rowLabels.map((rl, r) => `<tr><th title="${esc(rl)}">${esc(rl)}</th>` + colLabels.map((_, c) => {
+    const x = cells[r][c];
+    if (!x || !x.v) return `<td><div class="cell zero">0</div></td>`;
+    handlers.push(x);
+    return `<td><div class="cell ${x.alpha > 0.55 ? "dark" : ""}" style="--a:${x.alpha.toFixed(2)}" data-h="${handlers.length - 1}">${esc(x.label)}</div></td>`;
+  }).join("") + `</tr>`).join("");
+  host.innerHTML = `<table class="heat"><thead><tr><th></th>${colLabels.map(c => `<th title="${esc(c)}">${esc(c)}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table>`;
+  host.querySelectorAll("[data-h]").forEach(n => {
+    const x = handlers[+n.dataset.h];
+    n.addEventListener("mousemove", e => showTip(e, x.title, x.tip));
+    n.addEventListener("mouseleave", hideTip);
+    n.addEventListener("click", () => { hideTip(); x.onClick(); });
+  });
+}
+// Monotone Abbildung Wert -> Deckkraft (Wurzel, damit kleine Werte sichtbar bleiben)
+const alphaOf = (v, max) => 0.12 + 0.88 * Math.sqrt(v / max);
+
+/* ---------- KPIs & Übersicht ---------- */
+function renderKpis(a) {
+  const total = a.fs.length;
+  const critCves = [...a.cve.keys()].filter(ci => D.cves[ci].s === 3).length;
+  const expCves = [...a.cve.keys()].filter(ci => D.cves[ci].e > 0).length;
+  const expDevs = [...a.dev.values()].filter(d => d.maxE > 0).length;
+  const segs = [3, 2, 1, 0].filter(s => a.sevCount[s] > 0);
+  const bar = segs.map(s => `<div style="flex:${a.sevCount[s]};background:var(${SEV_VAR[s]})" title="${SEV[s]}: ${fmt(a.sevCount[s])}"></div>`).join("");
+  const legend = [3, 2, 1, 0].map(s => `<span style="--c:var(${SEV_VAR[s]})">${SEV[s]} ${fmt(a.sevCount[s])}</span>`).join("");
+  const hist = (D.history || []).slice(-30).map(h => h.t);
+  const unfiltered = a.fs === D.f;
+  let deltaHtml = "";
+  if (HAS_PREV) {
+    const fixed = unfiltered ? D.fixed.length : filterFixed().length;
+    deltaHtml = `<div class="delta"><span class="up">▲ ${fmt(a.recent)} neu</span> · <span class="down">▼ ${fmt(fixed)} behoben</span> <span class="muted">seit ${dateTime(prevRun)}</span></div>`;
+  }
+  document.getElementById("kpis").innerHTML = `
+    <div class="card kpi hero">
+      <div class="label">Offene Funde (CVE × Gerät)</div>
+      <div class="row"><div class="value">${fmt(total)}</div>${unfiltered ? sparkline(hist) : ""}</div>
+      ${deltaHtml}
+      <div class="sevbar" role="img" aria-label="Verteilung nach Schweregrad">${bar}</div>
+      <div class="legend">${legend}</div>
+    </div>
+    <div class="card kpi"><div class="label">Betroffene Geräte</div><div class="value">${fmt(a.dev.size)}</div><div class="hint">${fmt(expDevs)} mit Exploit-Funden</div></div>
+    <div class="card kpi"><div class="label">Eindeutige CVEs</div><div class="value">${fmt(a.cve.size)}</div><div class="hint">in ${fmt(a.sw.size)} Softwareprodukten</div></div>
+    <div class="card kpi"><div class="label">Kritische CVEs</div><div class="value">${fmt(critCves)}</div><div class="hint">${fmt(a.sevCount[3])} Funde</div></div>
+    <div class="card kpi"><div class="label">CVEs mit Exploit</div><div class="value">${fmt(expCves)}</div><div class="hint">${fmt(a.exploitable)} Funde, zuerst angehen</div></div>
+    <div class="card kpi"><div class="label">${NEW_LABEL}</div><div class="value">${fmt(a.recent)}</div><div class="hint">Funde</div></div>`;
+}
+
+function renderOverview(a, rows) {
+  const top = [...rows.actions].sort((x, y) => y.score - x.score).slice(0, 10);
+  hbars(document.getElementById("ch-top"), top.map(r => ({
+    label: r.name, total: r.score, valueLabel: compact(r.score),
+    parts: [{ v: r.score, color: css("--accent") }],
+    tip: [{ l: "Maßnahme", v: r.action }, { l: "Geräte", v: fmt(r.devs) }, { l: "CVEs (krit./hoch)", v: `${fmt(r.cves)} (${r.crit}/${r.high})` }, { l: "Exploit", v: EXP[r.maxE] }],
+    onClick: () => openDetail("sw", r.i),
+  })), { aria: "Top 10 Maßnahmen nach Priorität", labelW: 200, rowH: 28 });
+
+  const mx = a.matrix;
+  const maxCves = Math.max(1, ...mx.flat().map(m => m.cves.size));
+  heatmap(document.getElementById("hm-sevexp"), [3, 2, 1, 0].map(s => SEV[s]), EXP_SHORT.map((e, i) => i ? e : "Kein Exploit"),
+    [3, 2, 1, 0].map(s => [0, 1, 2, 3].map(e => {
+      const m = mx[s][e];
+      return { v: m.cves.size, label: fmt(m.cves.size), alpha: alphaOf(m.cves.size, maxCves), title: `${SEV[s]} · ${EXP[e]}`,
+        tip: [{ l: "CVEs", v: fmt(m.cves.size) }, { l: "Funde", v: fmt(m.n) }],
+        onClick: () => setFilters({ sev: "eq" + s, exp: "eq" + e }, "cves") };
+    })));
+
+  columns(document.getElementById("ch-age"), AGE_BUCKETS.map(b => b[1]),
+    [3, 2, 1, 0].map(s => ({ label: SEV[s], color: css(SEV_VAR[s]), values: a.ageSev.map(b => b[s]) })),
+    { stacked: true, aria: "Alter der offenen Funde nach Schweregrad", height: 220, barW: 56,
+      onClick: i => setFilters({ age: i === 0 ? "7" : i === 1 ? "30" : i >= 3 ? "old90" : "" }, "actions") });
+
+  renderNewBox(a);
+}
+
+function filterFixed() {
+  const { group, sev } = state;
+  return (D.fixed || []).filter(x => (!group || x[1] === group) && (!sev || (sev.startsWith("ge") ? x[5] >= +sev[2] : x[5] === +sev[2])));
+}
+
+function renderNewBox(a) {
+  const box = document.getElementById("new-box");
+  document.getElementById("new-title").textContent = HAS_PREV ? `Seit dem letzten Lauf (${dateTime(prevRun)})` : "Neu in den letzten 7 Tagen";
+  const fresh = [...a.cve.values()].filter(x => x.recent > 0)
+    .sort((x, y) => (D.cves[y.i].s - D.cves[x.i].s) || (D.cves[y.i].e - D.cves[x.i].e) || (y.recent - x.recent)).slice(0, 7);
+  const fixedCount = HAS_PREV ? filterFixed().length : null;
+  box.innerHTML = `<div class="bigdelta">
+      <div><b>${fmt(a.recent)}</b><span>neue Funde</span></div>
+      <div><b>${fmt(new Set(a.fs.filter(isNew).map(f => f[0])).size)}</b><span>Geräte betroffen</span></div>
+      ${HAS_PREV ? `<div><b>${fmt(fixedCount)}</b><span>Funde behoben</span></div>` : ""}
+    </div>` +
+    (fresh.length ? `<div class="small muted" style="margin-bottom:4px">Wichtigste neue CVEs</div><ul class="newlist">${fresh.map(x => {
+      const c = D.cves[x.i];
+      return `<li><span>${sevCell(c.s)} <button class="linkbtn" data-open="cve:${x.i}">${esc(c.id)}</button> <span class="muted small">${esc([...x.sws].map(si => D.sw[si]._name).join(", "))}</span></span><span class="small">${expCell(c.e)} · ${fmt(x.recent)} ${x.recent === 1 ? "Gerät" : "Geräte"}</span></li>`;
+    }).join("")}</ul>` : `<p class="muted">Keine neuen Funde.</p>`) +
+    (HAS_PREV || a.recent ? `<p style="margin:10px 0 0"><button class="linkbtn small" data-filter-new>Nur neue Funde anzeigen</button></p>` : "");
+}
+
+/* ---------- Tabellen ---------- */
+const tables = {};
+const sevCell = s => `<span class="sev" style="--c:var(${SEV_VAR[s]})">${SEV[s]}</span>`;
+const expCell = e => `<span class="exp e${e}">${EXP_SHORT[e]}</span>`;
+const chips = (crit, high) => `<span class="chips"><span class="chip ${crit ? "crit" : "zero"}" title="Kritisch">${crit}</span><span class="chip ${high ? "high" : "zero"}" title="Hoch">${high}</span></span>`;
+function prioCell(score, max) {
+  const pct = max > 0 ? Math.max(1, score / max * 100) : 0;
+  return `<div class="prio"><div class="track"><div class="fill" style="width:${pct}%"></div></div><span class="val">${compact(score)}</span></div>`;
+}
+
+function makeTable(id, columns, defaultSort, onRow) { tables[id] = { columns, sort: defaultSort, asc: false, rows: [], shown: PAGE, onRow }; }
+function setRows(id, rows) { const t = tables[id]; t.rows = rows; t.shown = PAGE; drawTable(id); }
+function drawTable(id) {
+  const t = tables[id];
+  const col = t.columns.find(c => c.key === t.sort);
+  const val = col.sort || (r => r[col.key]);
+  t.sorted = [...t.rows].sort((a, b) => {
+    const x = val(a), y = val(b);
+    const r = typeof x === "string" ? x.localeCompare(y, "de") : x - y;
+    return t.asc ? r : -r;
+  });
+  const rows = t.sorted;
+  const host = document.getElementById("t-" + id);
+  if (!rows.length) { host.innerHTML = `<div class="card empty">${t.empty || "Keine Treffer für die aktuellen Filter."}</div>`; return; }
+  const max = Math.max(...rows.map(r => r.score || 0));
+  const head = t.columns.map(c => `<th data-k="${c.key}" class="sortable ${c.num ? "num" : ""} ${c.key === t.sort ? "sorted" + (t.asc ? " asc" : "") : ""}">${c.label}</th>`).join("");
+  const body = rows.slice(0, t.shown).map((r, i) =>
+    `<tr data-i="${i}">` + t.columns.map(c => `<td class="${c.num ? "num" : ""} ${c.wrap ? "wraptext" : ""}">${c.html ? c.html(r, max) : esc(r[c.key])}</td>`).join("") + "</tr>").join("");
+  const more = rows.length > t.shown ? `<button class="more" data-more="${id}">Weitere ${fmt(Math.min(PAGE, rows.length - t.shown))} von ${fmt(rows.length - t.shown)} anzeigen</button>` : "";
+  host.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>${more}`;
+}
+
+makeTable("actions", [
+  { key: "score", label: "Priorität", html: (r, max) => prioCell(r.score, max) },
+  { key: "name", label: "Software", asc: true },
+  { key: "action", label: "Empfohlene Maßnahme", wrap: true, html: r => esc(r.action) + (r.update ? "" : ` <span class="no small">(kein Update)</span>`) },
+  { key: "devs", label: "Geräte", num: true, html: r => fmt(r.devs) },
+  { key: "cves", label: "CVEs", num: true, html: r => fmt(r.cves) },
+  { key: "critHigh", label: "Krit. / Hoch", sort: r => r.crit * 1000 + r.high, html: r => chips(r.crit, r.high) },
+  { key: "maxE", label: "Exploit", html: r => expCell(r.maxE) },
+  { key: "recent", label: NEW_LABEL, num: true, html: r => r.recent ? fmt(r.recent) : `<span class="muted">0</span>` },
+  { key: "vers", label: "Versionen", num: true },
+], "score", r => openDetail("sw", r.i));
+
+makeTable("cves", [
+  { key: "id", label: "CVE", asc: true, html: r => esc(r.id) + (r.recent ? `<span class="newtag">NEU</span>` : "") },
+  { key: "s", label: "Schweregrad", sort: r => r.s * 100 + r.c, html: r => sevCell(r.s) },
+  { key: "c", label: "CVSS", num: true, html: r => r.c ? r.c.toFixed(1) : "–" },
+  { key: "e", label: "Exploit", html: r => expCell(r.e) },
+  { key: "sw", label: "Software", asc: true, wrap: true },
+  { key: "devs", label: "Geräte", num: true, html: r => fmt(r.devs) },
+  { key: "score", label: "Priorität", html: (r, max) => prioCell(r.score, max) },
+  { key: "first", label: "Erstmals gesehen", sort: r => -r.first, html: r => isFinite(r.first) ? dayStr(r.first) : "–" },
+], "score", r => openDetail("cve", r.i));
+
+makeTable("devices", [
+  { key: "name", label: "Gerät", asc: true, html: r => esc(r.name) + (r.recent ? `<span class="newtag">+${r.recent}</span>` : "") },
+  { key: "g", label: "Gruppe", asc: true },
+  { key: "os", label: "System", asc: true },
+  { key: "tags", label: "Tags", asc: true, html: r => r.t.map(x => `<span class="tag">${esc(x)}</span>`).join("") },
+  ...(D.meta.sources.machines ? [{ key: "x", label: "Exposure", sort: r => ["", "None", "Low", "Medium", "High"].indexOf(r.x), html: r => esc(EXPOSURE[r.x] || r.x || "–") }] : []),
+  { key: "score", label: "Priorität", html: (r, max) => prioCell(r.score, max) },
+  { key: "n", label: "Funde", num: true, html: r => fmt(r.n) },
+  { key: "critHigh", label: "Krit. / Hoch", sort: r => r.crit * 100000 + r.high, html: r => chips(r.crit, r.high) },
+  { key: "maxE", label: "Exploit", html: r => expCell(r.maxE) },
+  { key: "sws", label: "Software", num: true },
+], "score", r => openDetail("dev", r.i));
+
+makeTable("groups", [
+  { key: "g", label: "Gruppe", asc: true },
+  { key: "score", label: "Priorität", html: (r, max) => prioCell(r.score, max) },
+  { key: "devs", label: "Betroffene Geräte", num: true, html: r => fmt(r.devs) },
+  { key: "n", label: "Funde", num: true, html: r => fmt(r.n) },
+  { key: "crit", label: "Kritisch", num: true, html: r => fmt(r.crit) },
+  { key: "high", label: "Hoch", num: true, html: r => fmt(r.high) },
+  { key: "exp", label: "Mit Exploit", num: true, html: r => fmt(r.exp) },
+  { key: "cves", label: "CVEs", num: true, html: r => fmt(r.cves) },
+  { key: "perDev", label: "Priorität je Gerät", num: true, html: r => compact(r.perDev) },
+], "score", r => openDetail("group", r.g));
+
+makeTable("fixed", [
+  { key: "dev", label: "Gerät", asc: true },
+  { key: "g", label: "Gruppe", asc: true },
+  { key: "sw", label: "Software", asc: true },
+  { key: "cve", label: "CVE", asc: true },
+  { key: "s", label: "Schweregrad", html: r => sevCell(r.s) },
+], "s", () => {});
+tables.fixed.empty = HAS_PREV ? "Seit dem letzten Lauf wurde nichts behoben." : "Wird ab dem zweiten Lauf des Skripts angezeigt.";
+
+function buildRows(a) {
+  return {
+    actions: [...a.sw.values()].map(x => {
+      const s = D.sw[x.i];
+      return { i: x.i, score: x.score, name: s._name, action: swAction(s), update: s.u || !!s.r, devs: x.devs.size, cves: x.cves.size,
+        crit: x.sevCves[3], high: x.sevCves[2], maxE: x.maxE, recent: x.recent, vers: x.vers.size };
+    }),
+    cves: [...a.cve.values()].map(x => {
+      const c = D.cves[x.i];
+      return { i: x.i, id: c.id, s: c.s, c: c.c, e: c.e, devs: x.devs.size, first: x.first, recent: x.recent,
+        sw: [...x.sws].map(si => D.sw[si]._name).join(", "), score: x.devs.size * W_SEV[c.s] * W_EXP[c.e] };
+    }),
+    devices: [...a.dev.values()].map(x => {
+      const d = D.devices[x.i];
+      return { i: x.i, name: d.n, g: d.g, os: d.os, t: d.t || [], tags: (d.t || []).join(", "), x: d.x, score: x.score, n: x.n,
+        crit: x.sev[3], high: x.sev[2], maxE: x.maxE, sws: x.sws.size, recent: x.recent };
+    }),
+    groups: [...a.grp.values()].map(x => ({ g: x.g, score: x.score, devs: x.devs.size, n: x.n, crit: x.sev[3], high: x.sev[2], exp: x.exp,
+      cves: x.cves.size, perDev: x.score / x.devs.size, sev: x.sev, sw: x.sw })),
+  };
+}
+
+function renderGroups(a, rows) {
+  const data = [...rows.groups].sort((x, y) => y.n - x.n).slice(0, 20);
+  hbars(document.getElementById("ch-groups"), data.map(d => ({
+    label: d.g, total: d.n,
+    parts: [3, 2, 1, 0].map(s => ({ v: d.sev[s], color: css(SEV_VAR[s]) })),
+    tip: [...[3, 2, 1, 0].map(s => ({ l: SEV[s], v: fmt(d.sev[s]), c: css(SEV_VAR[s]) })), { l: "Betroffene Geräte", v: fmt(d.devs) }],
+    onClick: () => openDetail("group", d.g),
+  })), { legend: sevLegend(), aria: "Funde pro Gerätegruppe nach Schweregrad", width: 1300, labelW: 260, rowH: 30 });
+
+  // Heatmap: Gruppen × die 12 Softwareprodukte mit der höchsten Priorität
+  const topSw = [...a.sw.values()].sort((x, y) => y.score - x.score).slice(0, 12).map(x => x.i);
+  const groups = [...rows.groups].sort((x, y) => y.score - x.score).slice(0, 20);
+  const host = document.getElementById("hm-groupsw");
+  if (!groups.length) return emptyBox(host, "Keine Daten für die aktuellen Filter.");
+  const maxScore = Math.max(1, ...groups.flatMap(g => topSw.map(si => g.sw.get(si)?.score || 0)));
+  heatmap(host, groups.map(g => g.g), topSw.map(si => D.sw[si]._name), groups.map(g => topSw.map(si => {
+    const x = g.sw.get(si);
+    if (!x) return null;
+    return { v: x.devs.size, label: fmt(x.devs.size), alpha: alphaOf(x.score, maxScore), title: `${g.g} · ${D.sw[si]._name}`,
+      tip: [{ l: "Betroffene Geräte", v: fmt(x.devs.size) + " von " + fmt(g.devs) }, { l: "Priorität", v: compact(x.score) }, { l: "Maßnahme", v: swAction(D.sw[si]) }],
+      onClick: () => { setFilters({ group: g.g }); openDetail("sw", si); } };
+  })));
+}
+
+function renderTrend() {
+  const h = D.history || [];
+  const short = d => { const p = d.split("-"); return `${p[2]}.${p[1]}.`; };
+  lineChart(document.getElementById("ch-history"), h.map(x => short(x.d)),
+    [3, 2, 1, 0].map(s => ({ label: SEV[s], color: css(SEV_VAR[s]), values: h.map(x => x.s[s]) })), "Offene Funde nach Schweregrad über die Zeit");
+  const c = D.changes || [];
+  columns(document.getElementById("ch-changes"), c.map(x => short(x.d)), [
+    { label: "Neu", color: css("--s-new"), values: c.map(x => sum(x.n)) },
+    { label: "Behoben", color: css("--s-fixed"), values: c.map(x => sum(x.x)) },
+  ], { aria: "Neue und behobene Funde pro Tag", maxTicks: 7, empty: "Keine Änderungsdaten. Die Delta-API liefert nur die letzten 14 Tage; ggf. fehlt die Berechtigung Vulnerability.Read.All." });
+  document.getElementById("fixed-title").textContent = HAS_PREV ? `Seit dem letzten Lauf behoben (${dateTime(prevRun)})` : "Seit dem letzten Lauf behoben";
+  setRows("fixed", filterFixed().map(x => ({ dev: x[0], g: x[1], sw: swName({ v: x[2], n: x[3] }), cve: x[4], s: x[5] })));
+}
+
+/* ---------- CSV ---------- */
+const CSV_COLS = {
+  actions: [["Priorität", r => Math.round(r.score)], ["Software", r => r.name], ["Maßnahme", r => r.action], ["Geräte", r => r.devs], ["CVEs", r => r.cves], ["Kritisch", r => r.crit], ["Hoch", r => r.high], ["Exploit", r => EXP[r.maxE]], [NEW_LABEL, r => r.recent]],
+  cves: [["CVE", r => r.id], ["Schweregrad", r => SEV[r.s]], ["CVSS", r => r.c], ["Exploit", r => EXP[r.e]], ["Software", r => r.sw], ["Geräte", r => r.devs], ["Priorität", r => Math.round(r.score)], ["Erstmals gesehen", r => isFinite(r.first) ? dayStr(r.first) : ""]],
+  devices: [["Gerät", r => r.name], ["Gruppe", r => r.g], ["System", r => r.os], ["Tags", r => r.tags], ["Exposure", r => r.x], ["Priorität", r => Math.round(r.score)], ["Funde", r => r.n], ["Kritisch", r => r.crit], ["Hoch", r => r.high], ["Exploit", r => EXP[r.maxE]]],
+  groups: [["Gruppe", r => r.g], ["Priorität", r => Math.round(r.score)], ["Geräte", r => r.devs], ["Funde", r => r.n], ["Kritisch", r => r.crit], ["Hoch", r => r.high], ["Mit Exploit", r => r.exp], ["CVEs", r => r.cves]],
+  fixed: [["Gerät", r => r.dev], ["Gruppe", r => r.g], ["Software", r => r.sw], ["CVE", r => r.cve], ["Schweregrad", r => SEV[r.s]]],
+};
+function downloadCsv(name, cols, rows) {
+  const cell = v => { const s = String(v ?? ""); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const lines = [cols.map(c => c[0]).join(";"), ...rows.map(r => cols.map(c => cell(c[1](r))).join(";"))];
+  const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `defender-${name}-${generated.toISOString().slice(0, 10)}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function exportCsv(id) {
+  if (dirty.has(id)) renderPanel(id);
+  downloadCsv(id, CSV_COLS[id], tables[id].sorted || []);
+}
+const FINDING_COLS = [
+  ["Gerät", f => D.devices[f[0]].n], ["Gruppe", f => D.devices[f[0]].g], ["System", f => D.devices[f[0]].os],
+  ["Software", f => D.sw[f[1]]._name], ["Version", f => D.vers[f[3]]], ["Maßnahme", f => swAction(D.sw[f[1]])],
+  ["CVE", f => D.cves[f[2]].id], ["Schweregrad", f => SEV[D.cves[f[2]].s]], ["CVSS", f => D.cves[f[2]].c || ""],
+  ["Exploit", f => EXP[D.cves[f[2]].e]], ["KB", f => D.cves[f[2]].kb ? "KB" + D.cves[f[2]].kb : ""],
+  ["Erstmals gesehen", f => f[4] ? dayStr(f[4]) : ""], [NEW_LABEL, f => isNew(f) ? "ja" : ""], ["Fundstellen", f => evidenceOf(f[0], f[1], f[3]).join(" | ")],
+];
+document.getElementById("f-export").addEventListener("click", () => {
+  const rows = [...current.fs].sort((a, b) => D.devices[a[0]].n.localeCompare(D.devices[b[0]].n) || (D.cves[b[2]].s - D.cves[a[2]].s));
+  downloadCsv("funde", FINDING_COLS, rows);
+});
+
+/* ---------- Detailansicht ---------- */
+const drawer = document.getElementById("drawer"), drawerBg = document.getElementById("drawer-bg");
+let drawerHash = "";
+function closeDrawer() {
+  drawer.classList.remove("open"); drawerBg.classList.remove("open"); drawer.setAttribute("aria-hidden", "true");
+  if (drawerHash) { drawerHash = ""; history.replaceState(null, "", "#" + state.tab); }
+}
+document.getElementById("drawer-close").addEventListener("click", closeDrawer);
+drawerBg.addEventListener("click", closeDrawer);
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
+const toastEl = document.getElementById("toast");
+function toast(msg) { toastEl.textContent = msg; toastEl.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.style.display = "none", 1800); }
+document.getElementById("drawer-link").addEventListener("click", () => {
+  navigator.clipboard?.writeText(location.href).then(() => toast("Link kopiert"), () => toast(location.href));
+});
+
+const link = (kind, key, text) => `<button class="linkbtn" data-open="${kind}:${kind === "group" ? encodeURIComponent(key) : key}">${esc(text)}</button>`;
+const facts = items => `<div class="facts">${items.map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join("")}</div>`;
+const withSub = (cells, sub) => Object.assign(cells, { sub });
+function miniTable(head, rows, limit = 100) {
+  if (!rows.length) return `<p class="muted">Keine</p>`;
+  const more = rows.length > limit ? `<p class="muted small">… und ${fmt(rows.length - limit)} weitere</p>` : "";
+  return `<div class="table-wrap"><table><thead><tr>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.slice(0, limit).map(r =>
+    `<tr${r.sub ? ' class="has-sub"' : ""}>${r.map(c => `<td>${c}</td>`).join("")}</tr>` + (r.sub ? `<tr class="sub"><td colspan="${head.length}">${r.sub}</td></tr>` : "")).join("")}</tbody></table></div>${more}`;
+}
+function countBy(fs, keyFn) { const m = new Map(); for (const f of fs) { const k = keyFn(f); m.set(k, (m.get(k) || 0) + 1); } return m; }
+const cveRows = fs => {
+  const m = new Map();
+  for (const f of fs) { const x = m.get(f[2]) || { n: 0, fresh: false }; x.n++; x.fresh = x.fresh || isNew(f); m.set(f[2], x); }
+  return [...m.entries()].sort((a, b) => (D.cves[b[0]].s - D.cves[a[0]].s) || (D.cves[b[0]].e - D.cves[a[0]].e) || (b[1].n - a[1].n))
+    .map(([ci, x]) => { const c = D.cves[ci]; return [link("cve", ci, c.id) + (x.fresh ? `<span class="newtag">NEU</span>` : ""), sevCell(c.s), c.c ? c.c.toFixed(1) : "–", expCell(c.e), fmt(x.n)]; });
+};
+const filterNote = () => current.fs === D.f ? "" : `<p class="small" style="margin-top:8px">⚠ Es sind Filter aktiv, die Details zeigen nur passende Funde. <button class="linkbtn small" data-reset-open>Filter zurücksetzen</button></p>`;
+
+function openDetail(kind, key) {
+  const fs = current.fs;
+  let html = "", hash = "";
+  if (kind === "sw") {
+    const s = D.sw[key], mine = fs.filter(f => f[1] === key);
+    hash = "sw=" + encodeURIComponent(s._key);
+    const devs = new Set(mine.map(f => f[0])), cves = new Set(mine.map(f => f[2]));
+    const vers = countBy(mine, f => f[3]);
+    const devCount = countBy(mine, f => f[0]);
+    const verOf = new Map(mine.map(f => [f[0], f[3]]));
+    html = `<h2>${esc(s._name)}</h2><p class="sub">${esc(swAction(s))}</p>` + filterNote() +
+      facts([[fmt(devs.size), "betroffene Geräte"], [fmt(cves.size), "CVEs"], [fmt([...cves].filter(c => D.cves[c].s === 3).length), "davon kritisch"], [fmt(mine.filter(isNew).length), NEW_LABEL]]) +
+      `<h3>Installierte verwundbare Versionen</h3>` +
+      miniTable(["Version", "Funde", "Geräte"], [...vers.entries()].sort((a, b) => b[1] - a[1]).map(([vi, n]) =>
+        [esc(D.vers[vi] || "unbekannt"), fmt(n), fmt(new Set(mine.filter(f => f[3] === vi).map(f => f[0])).size)])) +
+      `<h3>CVEs</h3>` + miniTable(["CVE", "Schweregrad", "CVSS", "Exploit", "Geräte"], cveRows(mine)) +
+      `<h3>Betroffene Geräte und Fundstellen</h3>` + miniTable(["Gerät", "Gruppe", "Version", "CVEs"], [...devCount.entries()].sort((a, b) => b[1] - a[1]).map(([di, n]) =>
+        withSub([link("dev", di, D.devices[di].n), esc(D.devices[di].g), esc(D.vers[verOf.get(di)]), fmt(n)], pathsHtml(di, key, verOf.get(di)))), 300);
+  } else if (kind === "cve") {
+    const c = D.cves[key], mine = fs.filter(f => f[2] === key);
+    hash = "cve=" + encodeURIComponent(c.id);
+    const sws = countBy(mine, f => f[1]);
+    html = `<h2>${esc(c.id)}</h2>
+      <p>${sevCell(c.s)} · CVSS ${c.c ? c.c.toFixed(1) : "–"} · <span class="exp e${c.e}">${EXP[c.e]}</span></p>
+      <p><a href="https://security.microsoft.com/vulnerabilities/vulnerability/${encodeURIComponent(c.id)}/overview" target="_blank" rel="noopener">In Microsoft Defender öffnen</a> ·
+         <a href="https://nvd.nist.gov/vuln/detail/${encodeURIComponent(c.id)}" target="_blank" rel="noopener">NVD</a> ·
+         <a href="https://msrc.microsoft.com/update-guide/vulnerability/${encodeURIComponent(c.id)}" target="_blank" rel="noopener">MSRC</a></p>` +
+      (c.kb ? `<p>Empfohlenes Sicherheitsupdate: <a href="${esc(c.kbu || "https://catalog.update.microsoft.com/Search.aspx?q=KB" + encodeURIComponent(c.kb))}" target="_blank" rel="noopener">KB${esc(c.kb)}</a>${c.kbn ? " · " + esc(c.kbn) : ""}</p>` : "") +
+      filterNote() +
+      facts([[fmt(new Set(mine.map(f => f[0])).size), "betroffene Geräte"], [fmt(sws.size), "Softwareprodukte"], [fmt(mine.filter(isNew).length), NEW_LABEL]]) +
+      `<h3>Software</h3>` + miniTable(["Software", "Maßnahme", "Geräte"], [...sws.entries()].map(([si, n]) => [link("sw", si, D.sw[si]._name), esc(swAction(D.sw[si])), fmt(n)])) +
+      `<h3>Betroffene Geräte und Fundstellen</h3>` + miniTable(["Gerät", "Gruppe", "Software", "Version"], mine.map(f =>
+        withSub([link("dev", f[0], D.devices[f[0]].n) + newTag(f), esc(D.devices[f[0]].g), esc(D.sw[f[1]]._name), esc(D.vers[f[3]])], pathsHtml(f[0], f[1], f[3]))), 300);
+  } else if (kind === "dev") {
+    const d = D.devices[key], mine = fs.filter(f => f[0] === key);
+    hash = "dev=" + encodeURIComponent(d.n);
+    const sws = new Map();
+    for (const f of mine) {
+      const x = sws.get(f[1]) || { n: 0, crit: 0, high: 0, v: f[3], fresh: 0 };
+      x.n++; if (D.cves[f[2]].s === 3) x.crit++; if (D.cves[f[2]].s === 2) x.high++; if (isNew(f)) x.fresh++;
+      sws.set(f[1], x);
+    }
+    html = `<h2>${esc(d.n)}</h2><p class="sub">${esc(d.g)} · ${esc(d.os)}${d.l ? " · zuletzt gesehen " + new Date(d.l).toLocaleDateString("de-DE") : ""}</p>` +
+      ((d.t || []).length ? `<p>${d.t.map(t => `<span class="tag">${esc(t)}</span>`).join("")}</p>` : "") +
+      (d.id && !D.meta.demo ? `<p><a href="https://security.microsoft.com/machines/v2/${encodeURIComponent(d.id)}/overview" target="_blank" rel="noopener">In Microsoft Defender öffnen</a></p>` : "") +
+      filterNote() +
+      facts([[fmt(mine.length), "Funde"], [fmt(new Set(mine.map(f => f[2])).size), "CVEs"], [fmt(sws.size), "Softwareprodukte"], [esc(EXPOSURE[d.x] || d.x || "–"), "Exposure"]]) +
+      `<h3>Zu aktualisierende Software und Fundstellen</h3>` + miniTable(["Software", "Version", "Krit. / Hoch", "CVEs"], [...sws.entries()].sort((a, b) => (b[1].crit - a[1].crit) || (b[1].high - a[1].high) || (b[1].n - a[1].n))
+        .map(([si, x]) => withSub([link("sw", si, D.sw[si]._name) + (x.fresh ? `<span class="newtag">+${x.fresh}</span>` : "") + `<div class="muted small" style="white-space:normal">${esc(swAction(D.sw[si]))}</div>`, esc(D.vers[x.v]), chips(x.crit, x.high), fmt(x.n)], pathsHtml(key, si, x.v)))) +
+      `<h3>CVEs</h3>` + miniTable(["CVE", "Schweregrad", "CVSS", "Exploit", "Funde"], cveRows(mine));
+  } else if (kind === "group") {
+    const mine = fs.filter(f => D.devices[f[0]].g === key);
+    hash = "group=" + encodeURIComponent(key);
+    const bySw = new Map();
+    for (const f of mine) {
+      const x = bySw.get(f[1]) || { score: 0, devs: new Set() };
+      const c = D.cves[f[2]];
+      x.score += W_SEV[c.s] * W_EXP[c.e]; x.devs.add(f[0]);
+      bySw.set(f[1], x);
+    }
+    const byDev = countBy(mine, f => f[0]);
+    html = `<h2>${esc(key)}</h2>` + filterNote() +
+      facts([[fmt(byDev.size), "betroffene Geräte"], [fmt(mine.length), "Funde"], [fmt(new Set(mine.map(f => f[2])).size), "CVEs"], [fmt(mine.filter(isNew).length), NEW_LABEL]]) +
+      `<p style="margin-top:12px"><button class="linkbtn" data-filter-group="${encodeURIComponent(key)}">Gesamten Report auf diese Gruppe filtern</button></p>` +
+      `<h3>Wichtigste Maßnahmen in dieser Gruppe</h3>` + miniTable(["Software", "Maßnahme", "Geräte", "Priorität"], [...bySw.entries()].sort((a, b) => b[1].score - a[1].score)
+        .map(([si, x]) => [link("sw", si, D.sw[si]._name), esc(swAction(D.sw[si])), fmt(x.devs.size), compact(x.score)]), 30) +
+      `<h3>Geräte</h3>` + miniTable(["Gerät", "System", "Funde"], [...byDev.entries()].sort((a, b) => b[1] - a[1]).map(([di, n]) => [link("dev", di, D.devices[di].n), esc(D.devices[di].os), fmt(n)]), 300);
+  }
+  document.getElementById("drawer-body").innerHTML = html;
+  drawer.scrollTop = 0;
+  drawer.classList.add("open"); drawerBg.classList.add("open"); drawer.setAttribute("aria-hidden", "false");
+  drawerHash = hash;
+  history.replaceState(null, "", "#" + hash);
+}
+
+/* ---------- Klicks (delegiert) ---------- */
+document.addEventListener("click", e => {
+  const th = e.target.closest("th[data-k]");
+  if (th) {
+    const id = th.closest(".table-wrap").id.slice(2), t = tables[id];
+    if (t.sort === th.dataset.k) t.asc = !t.asc; else { t.sort = th.dataset.k; t.asc = !!t.columns.find(c => c.key === t.sort).asc; }
+    drawTable(id);
+    return;
+  }
+  const more = e.target.closest("[data-more]");
+  if (more) { tables[more.dataset.more].shown += PAGE; drawTable(more.dataset.more); return; }
+  const tr = e.target.closest(".table-wrap.click tbody tr");
+  if (tr) { const id = tr.closest(".table-wrap").id.slice(2); tables[id].onRow(tables[id].sorted[+tr.dataset.i]); return; }
+  const open = e.target.closest("[data-open]");
+  if (open) { const [kind, key] = open.dataset.open.split(":"); openDetail(kind, kind === "group" ? decodeURIComponent(key) : +key); return; }
+  const go = e.target.closest("[data-goto]");
+  if (go) { showTab(go.dataset.goto); return; }
+  if (e.target.closest("[data-filter-new]")) { setFilters({ age: HAS_PREV ? "run" : "7" }, "actions"); return; }
+  const fg = e.target.closest("[data-filter-group]");
+  if (fg) { closeDrawer(); setFilters({ group: decodeURIComponent(fg.dataset.filterGroup) }, "actions"); return; }
+  if (e.target.closest("[data-reset-open]")) {
+    const h = drawerHash;
+    Object.assign(state, FILTER_DEFAULT); syncControls(); update();
+    if (h) openFromHash(h);
+    return;
+  }
+  const csvBtn = e.target.closest("[data-csv]");
+  if (csvBtn) exportCsv(csvBtn.dataset.csv);
+});
+
+/* ---------- Tabs, Rendering & Deep-Links ---------- */
+const PANELS = ["overview", "actions", "cves", "devices", "groups", "trend"];
+const dirty = new Set();
+let current = null, currentRows = null;
+
+function renderPanel(id) {
+  dirty.delete(id);
+  if (id === "overview") renderOverview(current, currentRows);
+  else if (id === "groups") { renderGroups(current, currentRows); setRows("groups", currentRows.groups); }
+  else if (id === "trend") renderTrend();
+  else setRows(id, currentRows[id]);
+}
+function showTab(tab) {
+  if (!PANELS.includes(tab)) tab = "overview";
+  state.tab = tab;
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("active", x.dataset.tab === tab));
+  document.querySelectorAll(".panel").forEach(p => p.classList.toggle("active", p.id === "p-" + tab));
+  if (dirty.has(tab)) renderPanel(tab);
+  if (!drawerHash) history.replaceState(null, "", "#" + tab);
+  try { localStorage.setItem("defender-report-tab", tab); } catch (_) {}
+}
+document.getElementById("tabs").addEventListener("click", e => { const b = e.target.closest("button[data-tab]"); if (b) showTab(b.dataset.tab); });
+
+// Nur der sichtbare Tab wird sofort gerendert, die anderen beim ersten Öffnen.
+function update() {
+  current = aggregate(filterFindings());
+  currentRows = buildRows(current);
+  renderKpis(current);
+  for (const id of ["actions", "cves", "devices", "groups"]) document.getElementById("c-" + id).textContent = fmt(currentRows[id].length);
+  PANELS.forEach(p => dirty.add(p));
+  renderPanel(state.tab);
+  const active = Object.keys(FILTER_DEFAULT).filter(k => state[k]).length;
+  document.getElementById("filter-status").innerHTML = active
+    ? `${active} Filter aktiv · ${fmt(current.fs.length)} von ${fmt(D.f.length)} Funden`
+    : `${fmt(D.f.length)} Funde auf ${fmt(D.devices.length)} Geräten`;
+}
+
+// #cve=CVE-…  #dev=<Gerätename>  #sw=<hersteller|produkt>  #group=<Gruppe>  #q=<Suchbegriff>  oder #<tab>
+function openFromHash(h) {
+  const m = /^(cve|dev|sw|group|q)=(.*)$/.exec(h);
+  if (!m) { showTab(h); return; }
+  const val = decodeURIComponent(m[2]);
+  if (m[1] === "q") { setFilters({ q: val }, "actions"); return; }
+  const idx = m[1] === "cve" ? cveById.get(val.toLowerCase()) : m[1] === "dev" ? devByName.get(val.toLowerCase()) : m[1] === "sw" ? swByKey.get(val.toLowerCase()) : val;
+  if (idx === undefined || (m[1] === "group" && !current.grp.has(val))) { toast(`Nicht im Report gefunden: ${val}`); return; }
+  openDetail(m[1], idx);
+}
+window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (h && h !== drawerHash && h !== state.tab) openFromHash(h); });
+
+function init() {
+  const m = D.meta;
+  document.getElementById("meta-line").textContent = `${m.tenant} · Stand ${dateTime(generated)}`;
+  const badges = [];
+  if (m.demo) badges.push(`<span class="badge demo">Demodaten</span>`);
+  if (!m.sources.machines) badges.push(`<span class="badge" title="Berechtigung Machine.Read.All fehlt: keine Tags und Exposure">ohne Gerätedetails</span>`);
+  if (!m.sources.recommendations) badges.push(`<span class="badge" title="Berechtigung SecurityRecommendation.Read.All fehlt: Maßnahmen ohne Empfehlungstext">ohne Empfehlungen</span>`);
+  if (!HAS_PREV) badges.push(`<span class="badge" title="Ab dem zweiten Lauf wird angezeigt, was seit dem letzten Lauf neu bzw. behoben ist">erster Lauf</span>`);
+  document.getElementById("meta-badges").innerHTML = badges.join(" ");
+  syncControls();
+  update();
+  let saved = null;
+  try { saved = localStorage.getItem("defender-report-tab"); } catch (_) {}
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (h) openFromHash(location.hash.slice(1));
+  else if (saved && saved !== "overview") showTab(saved);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { PANELS.forEach(p => dirty.add(p)); renderPanel(state.tab); });
+}
+init();
+</script>
+</body>
+</html>

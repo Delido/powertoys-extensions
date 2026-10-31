@@ -4,6 +4,7 @@ using PowerToysExtensions.Extensions.Amp;
 using PowerToysExtensions.Extensions.BookStack;
 using PowerToysExtensions.Extensions.Checkmk;
 using PowerToysExtensions.Extensions.Cs2Nades;
+using PowerToysExtensions.Extensions.Defender;
 using PowerToysExtensions.Extensions.KeepAwake;
 using PowerToysExtensions.Extensions.LapsConnect;
 using PowerToysExtensions.Extensions.LauncherKey;
@@ -11,9 +12,11 @@ using PowerToysExtensions.Extensions.Mtr;
 using PowerToysExtensions.Extensions.OneDev;
 using PowerToysExtensions.Extensions.Paperless;
 using PowerToysExtensions.Extensions.PowerPlan;
+using PowerToysExtensions.Extensions.SharePoint;
 using PowerToysExtensions.Extensions.SignalRgb;
 using PowerToysExtensions.Extensions.SnipeIt;
 using PowerToysExtensions.Extensions.Ssh;
+using PowerToysExtensions.Extensions.Teams;
 using Shmuelie.WinRTServer.CsWinRT;
 
 namespace PowerToysExtensions;
@@ -48,6 +51,9 @@ public static class Program
         Register(server, () => new PaperlessExtension());
         Register(server, () => new SshExtension());
         Register(server, () => new LapsConnectExtension());
+        Register(server, () => new SharePointExtension());
+        Register(server, () => new TeamsExtension());
+        Register(server, () => new DefenderExtension());
 
         server.Start();
         ExtensionBase.AllDisposed.WaitOne();

@@ -61,6 +61,9 @@
               <com:Class Id="3DB56E8C-615F-406D-B131-0A5909ADDAF4" DisplayName="Paperless-ngx" />
               <com:Class Id="ADC097CC-3638-4EF1-AC55-6182E2CD8836" DisplayName="SSH Sessions" />
               <com:Class Id="4535C230-FEAA-44FF-9A8C-01020DAAC142" DisplayName="LAPS Connect" />
+              <com:Class Id="AAAADC85-C95B-4980-AC50-5A59BC1DE2F3" DisplayName="SharePoint" />
+              <com:Class Id="611DC4FC-7EA8-44BA-8712-FCB418060C97" DisplayName="Microsoft Teams" />
+              <com:Class Id="94557F86-907B-49E8-83BC-5DC511C0199C" DisplayName="Defender Schwachstellen" />
             </com:ExeServer>
           </com:ComServer>
         </com:Extension>
@@ -215,6 +218,39 @@
             <uap3:Properties>
               <CmdPalProvider>
                 <Activation><CreateInstance ClassId="4535C230-FEAA-44FF-9A8C-01020DAAC142" /></Activation>
+                <SupportedInterfaces><Commands /></SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette" Id="SharePoint" PublicFolder="Public"
+            DisplayName="SharePoint" Description="Search SharePoint documents, pages and sites">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation><CreateInstance ClassId="AAAADC85-C95B-4980-AC50-5A59BC1DE2F3" /></Activation>
+                <SupportedInterfaces><Commands /></SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette" Id="Teams" PublicFolder="Public"
+            DisplayName="Microsoft Teams" Description="People, chats, channels, messages, status and meetings">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation><CreateInstance ClassId="611DC4FC-7EA8-44BA-8712-FCB418060C97" /></Activation>
+                <SupportedInterfaces><Commands /></SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette" Id="Defender" PublicFolder="Public"
+            DisplayName="Defender Schwachstellen" Description="Vulnerability report, search and top actions from Microsoft Defender">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation><CreateInstance ClassId="94557F86-907B-49E8-83BC-5DC511C0199C" /></Activation>
                 <SupportedInterfaces><Commands /></SupportedInterfaces>
               </CmdPalProvider>
             </uap3:Properties>
