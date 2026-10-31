@@ -41,9 +41,10 @@ Die Command Palette lädt Erweiterungen nur aus MSIX-Paketen, und Windows instal
 | **SignalRGB** | PC-Sensoren live, Beleuchtung und Effekte, Headset-Mute und -Akku, Tastatur-Game-Mode, CS2-Integration, TeamSpeak-Mute mit Einrichtungsassistent, Audioausgabe, Mikrofon im Dock | fertig |
 | **Paperless-ngx** | Dokumente suchen (Volltext, Filter, ähnliche), Posteingang, bearbeiten, herunterladen und hochladen; Token verschlüsselt, Entsperren per **Passwort oder Windows Hello** | fertig |
 | **SSH Sessions** | SSH-Hosts finden und verbinden (Windows Terminal), Team-Host-Listen (OneDev, HTTPS, Freigabe), SOCKS-Tunnel mit Browser, SFTP-Dateibrowser über Windows-OpenSSH | fertig |
+| **LAPS Connect** | WireGuard-IP eines Rechners finden, Windows-LAPS-Passwort aus Entra holen (Anmeldung per **Windows-SSO**), per SSH oder RDP verbinden; Passwort in der Zwischenablage ohne Verlauf mit Auto-Löschen; UniFi-Key im Tresor | fertig |
 | **BookStack** | Wiki durchsuchen (mit Typ-Filter), zuletzt geänderte Seiten, Bücher und Regale durchblättern, Seiten als Markdown lesen | fertig |
 
-Weitere folgen: SharePoint, Teams, LAPS Connect, Defender Schwachstellen, GPT4Free. *Window Drag* entfällt, das kann PowerToys mit **Alt+Drag** bzw. **FancyZones** selbst.
+Weitere folgen: SharePoint, Teams, Defender Schwachstellen, GPT4Free. *Window Drag* entfällt, das kann PowerToys mit **Alt+Drag** bzw. **FancyZones** selbst.
 
 ## Win-Taste als Launcher-Taste
 

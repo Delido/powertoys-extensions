@@ -48,6 +48,9 @@
     <PackageReference Include="Shmuelie.WinRTServer" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" />
     <PackageReference Include="ReverseMarkdown" />
+    <PackageReference Include="Microsoft.Identity.Client" />
+    <PackageReference Include="Microsoft.Identity.Client.Broker" />
+    <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools.MSIX">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>

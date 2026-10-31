@@ -62,6 +62,7 @@ public sealed class VaultGate(Vault vault, string product, string secretLabel, s
                 reload();
             }, Ui.Ctrl(VirtualKey.L)),
             new CommandContextItem(ChangePasswordPage()) { Title = "Change Password" },
+            new CommandContextItem(ReplaceSecretPage()) { Title = $"Replace {secretLabel}" },
             vault.HelloEnabled
                 ? Ui.Action("Disable Windows Hello", "", () =>
                 {
@@ -190,6 +191,29 @@ public sealed class VaultGate(Vault vault, string product, string secretLabel, s
             }
 
             Status.Info("Password changed");
+            return CommandResult.GoBack();
+        }, Ui.Glyph(""));
+    }
+
+    private FormPage ReplaceSecretPage()
+    {
+        var form = new FormBuilder()
+            .Input("secret", $"New {secretLabel}", placeholder: secretHelp, password: true, required: true)
+            .Input("password", "Password", password: true, required: true)
+            .Text("The new value is checked first, then stored encrypted with your password.", subtle: true)
+            .Build("Save");
+        return new FormPage($"Replace {secretLabel}", form, inputs =>
+        {
+            var secret = inputs.Str("secret");
+            var password = inputs["password"]?.GetValue<string>() ?? string.Empty;
+            Status.Start($"Checking the {secretLabel} …", $"{secretLabel} replaced", async () =>
+            {
+                await verify(secret);
+                if (!vault.ReplaceSecret(password, secret))
+                {
+                    throw new InvalidOperationException("Wrong password");
+                }
+            });
             return CommandResult.GoBack();
         }, Ui.Glyph(""));
     }

@@ -139,6 +139,28 @@ public sealed class Vault
         }
     }
 
+    /// <summary>Stores a new secret (e.g. a renewed token); the password and Windows Hello stay as they are.</summary>
+    public bool ReplaceSecret(string password, string secret)
+    {
+        if (Read() is not { } data)
+        {
+            return false;
+        }
+
+        try
+        {
+            var dataKey = Open(PasswordKey(password, Convert.FromBase64String(data.Salt)), data.PasswordKey);
+            data.Data = Seal(dataKey, Encoding.UTF8.GetBytes(secret));
+            Write(data);
+            Open(secret);
+            return true;
+        }
+        catch (CryptographicException)
+        {
+            return false;
+        }
+    }
+
     /// <summary>Lets Windows Hello unlock the vault too (needs the password once, Hello confirms).</summary>
     public async Task EnableHello(string password)
     {

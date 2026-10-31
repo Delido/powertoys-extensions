@@ -5,6 +5,7 @@ using PowerToysExtensions.Extensions.BookStack;
 using PowerToysExtensions.Extensions.Checkmk;
 using PowerToysExtensions.Extensions.Cs2Nades;
 using PowerToysExtensions.Extensions.KeepAwake;
+using PowerToysExtensions.Extensions.LapsConnect;
 using PowerToysExtensions.Extensions.LauncherKey;
 using PowerToysExtensions.Extensions.Mtr;
 using PowerToysExtensions.Extensions.OneDev;
@@ -46,6 +47,7 @@ public static class Program
         Register(server, () => new SignalRgbExtension());
         Register(server, () => new PaperlessExtension());
         Register(server, () => new SshExtension());
+        Register(server, () => new LapsConnectExtension());
 
         server.Start();
         ExtensionBase.AllDisposed.WaitOne();
