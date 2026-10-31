@@ -2,6 +2,7 @@ using Microsoft.CommandPalette.Extensions;
 using PowerToysExtensions.Core;
 using PowerToysExtensions.Extensions.BookStack;
 using PowerToysExtensions.Extensions.Checkmk;
+using PowerToysExtensions.Extensions.Cs2Nades;
 using PowerToysExtensions.Extensions.KeepAwake;
 using PowerToysExtensions.Extensions.LauncherKey;
 using PowerToysExtensions.Extensions.OneDev;
@@ -32,6 +33,7 @@ public static class Program
         Register(server, () => new OneDevExtension());
         Register(server, () => new CheckmkExtension());
         Register(server, () => new SnipeItExtension());
+        Register(server, () => new Cs2NadesExtension());
 
         server.Start();
         ExtensionBase.AllDisposed.WaitOne();

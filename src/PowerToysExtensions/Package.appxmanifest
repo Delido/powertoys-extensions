@@ -49,6 +49,7 @@
               <com:Class Id="9AEC9729-A270-40D2-BA86-780721AA64AD" DisplayName="OneDev" />
               <com:Class Id="EF36641F-2607-41D0-82D9-1DD1169D0D8C" DisplayName="Checkmk" />
               <com:Class Id="874E31EE-457E-4C41-93E1-0FF6B4A3ED1B" DisplayName="Snipe-IT" />
+              <com:Class Id="E1E42D05-6701-4E8B-9D0D-CA638E908459" DisplayName="CS2 Nades" />
             </com:ExeServer>
           </com:ComServer>
         </com:Extension>
@@ -115,6 +116,17 @@
             <uap3:Properties>
               <CmdPalProvider>
                 <Activation><CreateInstance ClassId="874E31EE-457E-4C41-93E1-0FF6B4A3ED1B" /></Activation>
+                <SupportedInterfaces><Commands /></SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette" Id="Cs2Nades" PublicFolder="Public"
+            DisplayName="CS2 Nades" Description="Smoke, molotov, flash and HE lineups of the Premier maps with video, live from csnades.gg">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation><CreateInstance ClassId="E1E42D05-6701-4E8B-9D0D-CA638E908459" /></Activation>
                 <SupportedInterfaces><Commands /></SupportedInterfaces>
               </CmdPalProvider>
             </uap3:Properties>

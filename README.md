@@ -33,9 +33,11 @@ Die Command Palette lädt Erweiterungen nur aus MSIX-Paketen, und Windows instal
 | **Launcher Key** | Command Palette mit kurzem Antippen der **Win-Taste** öffnen | fertig |
 | **OneDev** | Projekte, Issues, Pull Requests und Builds suchen, mit Filtern wie in OneDev, Beschreibung im Detailbereich | fertig |
 | **Checkmk** | Probleme, Hosts und Services, bestätigen und Downtimes setzen, **Problem-Monitor** mit Windows-Benachrichtigung | fertig |
+| **Snipe-IT** | Assets, Benutzer, Lizenzen, Zubehör und Verbrauchsmaterial, Check-in/-out, Asset per Tag oder Seriennummer (Barcode-Scanner), fällige Audits | fertig |
+| **CS2 Nades** | Smoke-, Molotov-, Flash- und HE-Lineups der Premier-Maps mit Lineup-Bild, Video direkt in der Palette (per ffmpeg), live von [csnades.gg](https://csnades.gg) | fertig |
 | **BookStack** | Wiki durchsuchen (mit Typ-Filter), zuletzt geänderte Seiten, Bücher und Regale durchblättern, Seiten als Markdown lesen | fertig |
 
-Weitere folgen: SharePoint, Teams, Snipe-IT, SSH, LAPS Connect, Defender Schwachstellen, SignalRGB, CS2 Nades, Power Plan, AMP, MTR, Paperless-ngx, GPT4Free. *Window Drag* entfällt, das kann PowerToys mit **Alt+Drag** bzw. **FancyZones** selbst.
+Weitere folgen: SharePoint, Teams, SSH, LAPS Connect, Defender Schwachstellen, SignalRGB, Power Plan, AMP, MTR, Paperless-ngx, GPT4Free. *Window Drag* entfällt, das kann PowerToys mit **Alt+Drag** bzw. **FancyZones** selbst.
 
 ## Win-Taste als Launcher-Taste
 
