@@ -195,7 +195,9 @@ internal sealed partial class SensorsPage : ListPage
     private readonly ChoiceFilters _filter = new(Categories);
     private readonly Timer _idle;
     private HashSet<string> _favorites;
+    private readonly Dictionary<string, SensorItem> _items = [];
     private Sensor[] _sensors = [];
+    private string[] _layout = [];
     private WebPipe? _pipe;
     private DateTime _lastSeen;
 
@@ -225,25 +227,53 @@ internal sealed partial class SensorsPage : ListPage
             _ = Connect();
         }
 
+        var (rows, visible) = Rows();
+        if (_sensors.Length > 0 && rows.Count == 0)
+        {
+            EmptyContent = Ui.EmptyItem(_filter.CurrentFilterId == "favorites" ? "No favorites yet" : "No sensors", _filter.CurrentFilterId == "favorites" ? "Pin sensors with Ctrl+Shift+P" : string.Empty, "");
+        }
+
+        _layout = [.. rows.Select(r => r.Key)];
+        return [.. rows.Select(r => Fill(r.Key, r.Sensor, r.Section, visible))];
+    }
+
+    /// <summary>The shown rows (favorites first in "All Sensors"), each keyed by section and sensor.</summary>
+    private (List<(string Key, Sensor Sensor, string Section)> Rows, Sensor[] Visible) Rows()
+    {
         var visible = _filter.CurrentFilterId switch
         {
             "all" => _sensors,
             "favorites" => _sensors.Where(s => _favorites.Contains(s.Uid)).ToArray(),
             var c => _sensors.Where(s => s.Category == c).ToArray(),
         };
-        var items = new List<IListItem>();
+        var rows = new List<(string Key, Sensor Sensor, string Section)>();
         if (_filter.CurrentFilterId == "all")
         {
-            items.AddRange(visible.Where(s => _favorites.Contains(s.Uid)).Select(s => Item(s, "Favorites", visible)));
+            rows.AddRange(visible.Where(s => _favorites.Contains(s.Uid)).Select(s => ($"fav|{s.Uid}", s, "Favorites")));
         }
 
-        items.AddRange(visible.Select(s => Item(s, s.Group, visible)));
-        if (_sensors.Length > 0 && items.Count == 0)
+        rows.AddRange(visible.Select(s => ($"{s.Group}|{s.Uid}", s, s.Group)));
+        return (rows, visible);
+    }
+
+    /// <summary>
+    /// New values update the existing items in place; rebuilding the list every second would make
+    /// Command Palette jump back to the top. Only a changed set of sensors rebuilds it.
+    /// </summary>
+    private void OnUpdate(Sensor[] sensors)
+    {
+        _sensors = sensors;
+        var (rows, visible) = Rows();
+        if (!rows.Select(r => r.Key).SequenceEqual(_layout))
         {
-            EmptyContent = Ui.EmptyItem(_filter.CurrentFilterId == "favorites" ? "No favorites yet" : "No sensors", _filter.CurrentFilterId == "favorites" ? "Pin sensors with Ctrl+Shift+P" : string.Empty, "");
+            RaiseItemsChanged();
+            return;
         }
 
-        return [.. items];
+        foreach (var (key, sensor, section) in rows)
+        {
+            Fill(key, sensor, section, visible);
+        }
     }
 
     private static HashSet<string> LoadFavorites()
@@ -310,11 +340,7 @@ internal sealed partial class SensorsPage : ListPage
     private async Task Connect()
     {
         var pipe = _pipe = new WebPipe();
-        pipe.Updated += sensors =>
-        {
-            _sensors = sensors;
-            RaiseItemsChanged();
-        };
+        pipe.Updated += OnUpdate;
         pipe.Failed += ex =>
         {
             EmptyContent = Ui.ErrorItem(ex, () => RaiseItemsChanged());
@@ -351,44 +377,79 @@ internal sealed partial class SensorsPage : ListPage
         }
 
         File.WriteAllText(FavoritesFile, JsonSerializer.Serialize(_favorites));
+
+        // the favorite action and star change: build these items again
+        foreach (var key in _items.Keys.Where(k => k.EndsWith($"|{s.Uid}", StringComparison.Ordinal)).ToArray())
+        {
+            _items.Remove(key);
+        }
+
+        _layout = [];
         RaiseItemsChanged();
     }
 
-    private ListItem Item(Sensor s, string section, Sensor[] visible)
+    private SensorItem Fill(string key, Sensor s, string section, Sensor[] visible)
     {
+        if (!_items.TryGetValue(key, out var item))
+        {
+            var favorite = _favorites.Contains(s.Uid);
+            var uid = s.Uid;
+            Sensor Current() => _sensors.FirstOrDefault(x => x.Uid == uid) ?? s;
+            _items[key] = item = new SensorItem(() => _lastSeen = DateTime.UtcNow)
+            {
+                Title = s.Name,
+                Subtitle = section == "Favorites" ? s.Group : string.Empty,
+                Icon = Ui.Glyph(Glyph(s)),
+                Section = section,
+                Details = new Details(),
+                MoreCommands =
+                [
+                    Ui.Action(favorite ? "Remove from Favorites" : "Add to Favorites", "", () => ToggleFavorite(Current()), Ui.CtrlShift(VirtualKey.P)),
+                    CopyLater("Copy Sensor and Value", () => $"{Current().Group} {Current().Name}: {Current().Display}", Ui.CtrlShift((VirtualKey)0xBE)),
+                    CopyLater("Copy All Shown Sensors", () => string.Join("\n\n", Rows().Visible.GroupBy(x => x.Group).Select(g => $"{g.Key}\n{string.Join("\n", g.Select(x => $"  {x.Name}: {x.Display}"))}"))),
+                ],
+            };
+            item.Command = new CopyTextCommand(s.Display) { Name = "Copy Value" };
+        }
+
         var history = new[] { ("Seconds", s.History.Seconds), ("Minutes", s.History.Minutes), ("5-minute steps", s.History.FiveMinutes), ("Hours", s.History.Hours) }
             .Where(h => h.Item2.Length > 0)
             .Select(h => $"**{h.Item1}** ({h.Item2.Length})\n```\n{Sparkline(h.Item2, 40)}\n```\nmin {WithUnit(h.Item2.Min(), s.Unit)} · avg {WithUnit(h.Item2.Average(), s.Unit)} · max {WithUnit(h.Item2.Max(), s.Unit)}");
-        var all = string.Join("\n\n", visible.GroupBy(x => x.Group).Select(g => $"{g.Key}\n{string.Join("\n", g.Select(x => $"  {x.Name}: {x.Display}"))}"));
-        var favorite = _favorites.Contains(s.Uid);
-        return new ListItem(new CopyTextCommand(s.Display) { Name = "Copy Value" })
+        ((CopyTextCommand)item.Command!).Text = s.Display;
+        item.Tags = _favorites.Contains(s.Uid) ? [Ui.Tag(Sparkline(s.History.Seconds, 20)), Ui.Yellow("★"), ValueTag(s)] : [Ui.Tag(Sparkline(s.History.Seconds, 20)), ValueTag(s)];
+        var details = (Details)item.Details!;
+        details.Title = s.Display;
+        details.Body = $"{s.Group} · {s.Name}\n\n{string.Join("\n\n", history)}";
+        details.Metadata =
+        [
+            Ui.Label("Sensor", s.Name),
+            Ui.Label("Device", s.Group),
+            Ui.Label("Value", s.Display),
+            Ui.Label("Range", $"{WithUnit(s.Min, s.Unit)} – {WithUnit(s.Max, s.Unit)}"),
+            Ui.Label("Type", s.Type.Replace("Provider", string.Empty, StringComparison.Ordinal)),
+            Ui.Label("ID", s.Uid),
+        ];
+        return item;
+    }
+
+    private static CommandContextItem CopyLater(string title, Func<string> text, KeyChord? shortcut = null) => Ui.Action(title, "", () =>
+    {
+        ClipboardHelper.SetText(text());
+        Status.Info("Copied");
+    }, shortcut);
+
+    /// <summary>Command Palette reads the tags of shown items after each update – that tells the page is still open.</summary>
+    private sealed partial class SensorItem(Action seen) : ListItem
+    {
+        public override ITag[] Tags
         {
-            Title = s.Name,
-            Subtitle = section == "Favorites" ? s.Group : string.Empty,
-            Icon = Ui.Glyph(Glyph(s)),
-            Section = section,
-            Tags = favorite ? [Ui.Tag(Sparkline(s.History.Seconds, 20)), Ui.Yellow("★"), ValueTag(s)] : [Ui.Tag(Sparkline(s.History.Seconds, 20)), ValueTag(s)],
-            Details = new Details
+            get
             {
-                Title = s.Display,
-                Body = $"{s.Group} · {s.Name}\n\n{string.Join("\n\n", history)}",
-                Metadata =
-                [
-                    Ui.Label("Sensor", s.Name),
-                    Ui.Label("Device", s.Group),
-                    Ui.Label("Value", s.Display),
-                    Ui.Label("Range", $"{WithUnit(s.Min, s.Unit)} – {WithUnit(s.Max, s.Unit)}"),
-                    Ui.Label("Type", s.Type.Replace("Provider", string.Empty, StringComparison.Ordinal)),
-                    Ui.Label("ID", s.Uid),
-                ],
-            },
-            MoreCommands =
-            [
-                Ui.Action(favorite ? "Remove from Favorites" : "Add to Favorites", "", () => ToggleFavorite(s), Ui.CtrlShift(VirtualKey.P)),
-                Ui.Copy($"{s.Group} {s.Name}: {s.Display}", "Copy Sensor and Value", Ui.CtrlShift((VirtualKey)0xBE)),
-                Ui.Copy(all, "Copy All Shown Sensors"),
-            ],
-        };
+                seen();
+                return base.Tags;
+            }
+            set => base.Tags = value;
+        }
     }
 }
 

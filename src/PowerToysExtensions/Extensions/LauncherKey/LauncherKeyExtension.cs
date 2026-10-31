@@ -96,6 +96,14 @@ public sealed partial class LauncherKeyProvider : CommandProvider
         try
         {
             var running = KeyHelper.Running;
+            if (_settings.Enabled && running && KeyHelper.Outdated)
+            {
+                // left over from an older version of the package (it outlives updates on purpose)
+                KeyHelper.Stop();
+                Thread.Sleep(500);
+                running = KeyHelper.Running;
+            }
+
             if (_settings.Enabled && !running)
             {
                 KeyHelper.Start();
@@ -128,6 +136,33 @@ internal static class KeyHelper
             }
 
             return processes.Length > 0;
+        }
+    }
+
+    /// <summary>A running helper whose exe is not the one of this package version.</summary>
+    public static bool Outdated
+    {
+        get
+        {
+            foreach (var process in System.Diagnostics.Process.GetProcessesByName("launcher-key"))
+            {
+                using (process)
+                {
+                    try
+                    {
+                        if (!string.Equals(process.MainModule?.FileName, Exe, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+                    }
+                    catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+                    {
+                        // exited meanwhile
+                    }
+                }
+            }
+
+            return false;
         }
     }
 
