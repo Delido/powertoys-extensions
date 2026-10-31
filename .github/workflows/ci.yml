@@ -20,6 +20,17 @@ jobs:
           go-version: "1.26"
           cache: false
 
+      # Command Palette treats command ids as global: a duplicate makes one command open another one
+      - name: Unique command ids
+        shell: pwsh
+        run: |
+          $ids = Get-ChildItem src/PowerToysExtensions/Extensions -Recurse -Filter *.cs |
+            Select-String -Pattern '\bId = "([a-z0-9.-]+)"' -AllMatches |
+            Where-Object { $_.Line -notmatch 'new Filter \{' } |
+            ForEach-Object { $_.Matches.Groups[1].Value }
+          $dupes = $ids | Group-Object | Where-Object Count -gt 1
+          if ($dupes) { $dupes | ForEach-Object { Write-Error "duplicate command id: $($_.Name)" }; exit 1 }
+
       - name: Build helpers
         shell: pwsh
         run: ./scripts/build-helpers.ps1

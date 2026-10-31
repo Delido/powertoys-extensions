@@ -30,7 +30,7 @@ public sealed partial class KeepAwakeProvider : CommandProvider
 
         _main = new CommandItem(new KeepAwakePage(_settings)) { Title = "Keep Awake" };
         _toggle = new CommandItem(new ToggleAwakeCommand(_settings)) { Title = "Toggle Keep Awake" };
-        _band = new CommandItem(new ToggleAwakeCommand(_settings) { Id = "keep-awake-band" });
+        _band = new CommandItem(new ToggleAwakeCommand(_settings) { Id = "keepawake.keep-awake-band" });
 
         AwakeEngine.Changed += Refresh;
         AwakeEngine.Resume();
@@ -70,7 +70,7 @@ internal sealed partial class ToggleAwakeCommand : InvokableCommand
     public ToggleAwakeCommand(KeepAwakeSettings settings)
     {
         _settings = settings;
-        Id = "toggle-keep-awake";
+        Id = "keepawake.toggle-keep-awake";
         Name = "Toggle";
         Icon = new IconInfo("");
     }
@@ -98,7 +98,7 @@ internal sealed partial class KeepAwakePage : ListPage
     public KeepAwakePage(KeepAwakeSettings settings)
     {
         _settings = settings;
-        Id = "keep-awake";
+        Id = "keepawake.keep-awake";
         Name = "Open";
         Title = "Keep Awake";
         Icon = new IconInfo("");

@@ -248,7 +248,7 @@ public sealed partial class LapsProvider : CommandProvider
                 api.Vault.LockNow();
                 Status.Info("🔒 LAPS Connect locked");
             })
-            { Id = "lock", Name = "Lock", Result = CommandResult.Dismiss() })
+            { Id = "lapsconnect.lock", Name = "Lock", Result = CommandResult.Dismiss() })
             {
                 Title = "Lock LAPS Connect",
                 Icon = Ui.Glyph(""),
@@ -270,7 +270,7 @@ internal sealed partial class ConnectPage : AsyncListPage
     {
         _api = api;
         _gate = gate;
-        Id = "connect";
+        Id = "lapsconnect.connect";
         Name = "Open";
         Title = "LAPS Connect";
         Icon = Ui.Glyph("");

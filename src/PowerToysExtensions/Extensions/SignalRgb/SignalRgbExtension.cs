@@ -36,7 +36,7 @@ public sealed partial class SignalRgbProvider : CommandProvider
         Settings = settings.Settings;
 
         _companionItem = new CommandItem(new CompanionPage(_companion)) { Title = "Headset & Companion" };
-        _band = new CommandItem(new AnonymousCommand(() => ToggleMic()) { Id = "mic-band", Name = "Toggle Microphone", Result = CommandResult.KeepOpen() }) { Title = "Mic" };
+        _band = new CommandItem(new AnonymousCommand(() => ToggleMic()) { Id = "signalrgb.mic-band", Name = "Toggle Microphone", Result = CommandResult.KeepOpen() }) { Title = "Mic" };
         _commands =
         [
             new CommandItem(new SensorsPage(api)) { Title = "PC Sensors", Subtitle = "SignalRGB · live temperatures, fans, load" },
@@ -58,7 +58,7 @@ public sealed partial class SignalRgbProvider : CommandProvider
                 return await _companion.CurrentAudioDevice() is { } name ? $"🔊 {Companion.SplitDeviceName(name).Title}" : "🔊 Switched audio output";
             }),
             _companionItem,
-            new CommandItem(new AnonymousCommand(() => ToggleMic()) { Id = "toggle-mic", Name = "Toggle", Result = CommandResult.KeepOpen() }) { Title = "Toggle Microphone Mute", Icon = Ui.Glyph("") },
+            new CommandItem(new AnonymousCommand(() => ToggleMic()) { Id = "signalrgb.toggle-mic", Name = "Toggle", Result = CommandResult.KeepOpen() }) { Title = "Toggle Microphone Mute", Icon = Ui.Glyph("") },
         ];
 
         // replaces Raycast's "Companion Service" background command: keep the helper alive and its config in sync
@@ -204,7 +204,7 @@ internal sealed partial class SensorsPage : ListPage
     public SensorsPage(SignalApi api)
     {
         _api = api;
-        Id = "pc-sensors";
+        Id = "signalrgb.pc-sensors";
         Name = "Open";
         Title = "PC Sensors";
         Icon = Ui.Glyph("");
@@ -460,7 +460,7 @@ internal sealed partial class EffectsPage : AsyncListPage
     public EffectsPage(SignalApi api)
     {
         _api = api;
-        Id = "effects";
+        Id = "signalrgb.effects";
         Name = "Open";
         Title = "Lighting Effects";
         Icon = Ui.Glyph("");
@@ -614,7 +614,7 @@ internal sealed partial class BrightnessPage : ListPage
     public BrightnessPage(SignalApi api)
     {
         _api = api;
-        Id = "set-brightness";
+        Id = "signalrgb.set-brightness";
         Name = "Set Brightness";
         Title = "Set Brightness";
         Icon = Ui.Glyph("");
@@ -651,7 +651,7 @@ internal sealed partial class AudioOutputPage : AsyncListPage
     public AudioOutputPage(Companion companion)
     {
         _companion = companion;
-        Id = "audio-output";
+        Id = "signalrgb.audio-output";
         Name = "Open";
         Title = "Switch Audio Output";
         Icon = Ui.Glyph("");
@@ -686,7 +686,7 @@ internal sealed partial class CompanionPage : ListPage
     public CompanionPage(Companion companion)
     {
         _companion = companion;
-        Id = "companion";
+        Id = "signalrgb.companion";
         Name = "Open";
         Title = "Headset & Companion";
         Icon = Ui.Glyph("");

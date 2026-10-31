@@ -67,7 +67,7 @@ internal sealed partial class NadesPage : AsyncListPage
     {
         _settings = settings;
         _recommended = settings.OnlyRecommended;
-        Id = "nades";
+        Id = "cs2nades.nades";
         Name = "Open";
         Icon = Ui.Glyph("\uE945");
         PlaceholderText = "Search target or position, e.g. Jungle, Window, CT …";

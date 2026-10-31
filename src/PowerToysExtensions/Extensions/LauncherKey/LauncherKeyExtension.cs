@@ -50,7 +50,7 @@ public sealed partial class LauncherKeyProvider : CommandProvider
         Icon = new IconInfo(""); // Keyboard
         Settings = _settings.Settings;
 
-        _toggle = new CommandItem(new AnonymousCommand(Toggle) { Id = "toggle-launcher-key", Name = "Toggle", Result = CommandResult.KeepOpen() })
+        _toggle = new CommandItem(new AnonymousCommand(Toggle) { Id = "launcherkey.toggle-launcher-key", Name = "Toggle", Result = CommandResult.KeepOpen() })
         {
             Title = "Toggle Windows Key for Command Palette",
             Icon = Icon,

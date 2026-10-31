@@ -114,7 +114,7 @@ internal sealed partial class SearchPage : SearchListPage
     public SearchPage(BookStackApi api)
     {
         _api = api;
-        Id = "search";
+        Id = "bookstack.search";
         Name = "Search";
         Title = "Search BookStack";
         Icon = Glyph.Book;
@@ -207,7 +207,7 @@ internal sealed partial class RecentPagesPage : AsyncListPage
     public RecentPagesPage(BookStackApi api)
     {
         _api = api;
-        Id = "recent-pages";
+        Id = "bookstack.recent-pages";
         Name = "Open";
         Title = "Recently Updated Pages";
         Icon = Glyph.Page;
@@ -233,7 +233,7 @@ internal sealed partial class BooksPage : AsyncListPage
     public BooksPage(BookStackApi api)
     {
         _api = api;
-        Id = "browse-books";
+        Id = "bookstack.browse-books";
         Name = "Open";
         Title = "Books";
         Icon = Glyph.Book;
@@ -257,7 +257,7 @@ internal sealed partial class ShelvesPage : AsyncListPage
     public ShelvesPage(BookStackApi api)
     {
         _api = api;
-        Id = "browse-shelves";
+        Id = "bookstack.browse-shelves";
         Name = "Open";
         Title = "Shelves";
         Icon = Glyph.Shelf;

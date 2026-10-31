@@ -134,7 +134,7 @@ internal sealed partial class SearchPage : SearchListPage
     {
         _graph = graph;
         _settings = settings;
-        Id = "search";
+        Id = "sharepoint.search";
         Name = "Search";
         Title = "Search SharePoint";
         Icon = Glyphs.Site;

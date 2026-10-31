@@ -130,7 +130,7 @@ internal sealed partial class AssetsPage : SearchListPage
     public AssetsPage(SnipeItApi api)
     {
         _api = api;
-        Id = "search-assets";
+        Id = "snipeit.search-assets";
         Name = "Open";
         Title = "Snipe-IT Assets";
         Icon = Ui.Glyph("");
@@ -163,7 +163,7 @@ internal sealed partial class LookupPage : SearchListPage
     public LookupPage(SnipeItApi api)
     {
         _api = api;
-        Id = "lookup-asset";
+        Id = "snipeit.lookup-asset";
         Name = "Open";
         Title = "Look up Asset";
         Icon = Ui.Glyph("");
@@ -305,7 +305,7 @@ internal sealed partial class UsersPage : SearchListPage
     public UsersPage(SnipeItApi api)
     {
         _api = api;
-        Id = "search-users";
+        Id = "snipeit.search-users";
         Name = "Open";
         Title = "Snipe-IT Users";
         Icon = Ui.Glyph("");
@@ -421,7 +421,7 @@ internal sealed partial class LicensesPage : SearchListPage
     public LicensesPage(SnipeItApi api)
     {
         _api = api;
-        Id = "search-licenses";
+        Id = "snipeit.search-licenses";
         Name = "Open";
         Title = "Snipe-IT Licenses";
         Icon = Ui.Glyph("");
@@ -495,7 +495,7 @@ internal sealed partial class InventoryPage : AsyncListPage
     public InventoryPage(SnipeItApi api)
     {
         _api = api;
-        Id = "inventory";
+        Id = "snipeit.inventory";
         Name = "Open";
         Title = "Accessories & Consumables";
         Icon = Ui.Glyph("");
@@ -545,7 +545,7 @@ internal sealed partial class AuditDuePage : AsyncListPage
     public AuditDuePage(SnipeItApi api)
     {
         _api = api;
-        Id = "audit-due";
+        Id = "snipeit.audit-due";
         Name = "Open";
         Title = "Audits Due";
         Icon = Ui.Glyph("");

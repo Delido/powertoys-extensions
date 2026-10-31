@@ -29,12 +29,12 @@ public sealed partial class PowerPlanProvider : CommandProvider
         Settings = settings.Settings;
 
         _plans = new CommandItem(new PowerPlansPage(_auto)) { Title = "Power Plans" };
-        _toggle = new CommandItem(new AnonymousCommand(Toggle) { Id = "toggle-auto", Name = "Toggle", Result = CommandResult.KeepOpen() })
+        _toggle = new CommandItem(new AnonymousCommand(Toggle) { Id = "powerplan.toggle-auto", Name = "Toggle", Result = CommandResult.KeepOpen() })
         {
             Title = "Toggle Automatic Power Plan",
             Icon = Ui.Glyph(""),
         };
-        _band = new CommandItem(new PowerPlansPage(_auto) { Id = "power-plan-band" }) { Title = "Power" };
+        _band = new CommandItem(new PowerPlansPage(_auto) { Id = "powerplan.power-plan-band" }) { Title = "Power" };
         _auto.StatusChanged += Update;
         Update(_auto.Status);
     }
@@ -78,7 +78,7 @@ internal sealed partial class PowerPlansPage : AsyncListPage
     public PowerPlansPage(PowerAutomation auto)
     {
         _auto = auto;
-        Id = "power-plans";
+        Id = "powerplan.power-plans";
         Name = "Open";
         Title = "Power Plans";
         Icon = Ui.Glyph("");
@@ -234,7 +234,7 @@ internal sealed partial class GameDetectionPage : AsyncListPage
     public GameDetectionPage(PowerAutomation auto)
     {
         _auto = auto;
-        Id = "game-detection";
+        Id = "powerplan.game-detection";
         Name = "Game Detection";
         Title = "Game Detection";
         Icon = Ui.Glyph("");

@@ -224,7 +224,7 @@ internal sealed partial class HostsPage : AsyncListPage
     public HostsPage(SshContext ctx)
     {
         _ctx = ctx;
-        Id = "search-hosts";
+        Id = "ssh.search-hosts";
         Name = "Open";
         Title = "SSH Hosts";
         Icon = Ui.Glyph("\uE756");
@@ -640,7 +640,7 @@ internal sealed partial class SourcesPage : AsyncListPage
     public SourcesPage(SshContext ctx)
     {
         _ctx = ctx;
-        Id = "manage-sources";
+        Id = "ssh.manage-sources";
         Name = "Manage Sources";
         Title = "SSH Sources";
         Icon = Ui.Glyph("\uE713");

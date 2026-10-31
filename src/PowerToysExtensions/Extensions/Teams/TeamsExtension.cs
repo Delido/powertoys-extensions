@@ -90,7 +90,7 @@ internal sealed partial class PeoplePage : SearchListPage
     public PeoplePage(TeamsApi api)
     {
         _api = api;
-        Id = "search-people";
+        Id = "teams.search-people";
         Name = "Search";
         Title = "Search People";
         Icon = Glyphs.Person;
@@ -171,7 +171,7 @@ internal sealed partial class ChatsPage : AsyncListPage
     public ChatsPage(TeamsApi api)
     {
         _api = api;
-        Id = "search-chats";
+        Id = "teams.search-chats";
         Name = "Open";
         Title = "Search Chats";
         Icon = Glyphs.Chat;
@@ -234,7 +234,7 @@ internal sealed partial class ChannelsPage : AsyncListPage
     public ChannelsPage(TeamsApi api)
     {
         _api = api;
-        Id = "teams-channels";
+        Id = "teams.teams-channels";
         Name = "Open";
         Title = "Teams & Channels";
         Icon = Glyphs.Channel;
@@ -291,7 +291,7 @@ internal sealed partial class MessagesPage : SearchListPage
     public MessagesPage(TeamsApi api)
     {
         _api = api;
-        Id = "search-messages";
+        Id = "teams.search-messages";
         Name = "Search";
         Title = "Search Messages";
         Icon = Ui.Glyph("");
@@ -384,7 +384,7 @@ internal sealed partial class StatusPage : AsyncListPage
     public StatusPage(TeamsApi api)
     {
         _api = api;
-        Id = "set-status";
+        Id = "teams.set-status";
         Name = "Open";
         Title = "Set Teams Status";
         Icon = Glyphs.Status;
@@ -480,7 +480,7 @@ internal sealed partial class MeetingsPage : AsyncListPage
     public MeetingsPage(TeamsApi api)
     {
         _api = api;
-        Id = "meetings";
+        Id = "teams.meetings";
         Name = "Open";
         Title = "Upcoming Meetings";
         Icon = Glyphs.Calendar;
@@ -550,7 +550,7 @@ internal sealed partial class JoinNextMeetingCommand : InvokableCommand
     public JoinNextMeetingCommand(TeamsApi api)
     {
         _api = api;
-        Id = "join-next-meeting";
+        Id = "teams.join-next-meeting";
         Name = "Join";
         Icon = Glyphs.Video;
     }

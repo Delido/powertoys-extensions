@@ -102,7 +102,7 @@ internal sealed partial class ServersPage : AsyncListPage
     public ServersPage(AmpApi api)
     {
         _api = api;
-        Id = "manage-servers";
+        Id = "amp.manage-servers";
         Name = "Open";
         Title = "AMP Servers";
         Icon = Ui.Glyph("");

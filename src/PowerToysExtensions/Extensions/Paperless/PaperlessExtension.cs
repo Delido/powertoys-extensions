@@ -35,7 +35,7 @@ public sealed partial class PaperlessProvider : CommandProvider
                 api.Vault.LockNow();
                 Status.Info("🔒 Paperless locked");
             })
-            { Id = "lock", Name = "Lock", Result = CommandResult.Dismiss() })
+            { Id = "paperless.lock", Name = "Lock", Result = CommandResult.Dismiss() })
             {
                 Title = "Lock Paperless",
                 Icon = Ui.Glyph(""),
@@ -254,7 +254,7 @@ internal sealed partial class SearchPage : SearchListPage
     {
         _api = api;
         _gate = gate;
-        Id = "search-documents";
+        Id = "paperless.search-documents";
         Name = "Open";
         Title = "Paperless Documents";
         Icon = Ui.Glyph("");
@@ -330,7 +330,7 @@ internal sealed partial class InboxPage : AsyncListPage
     {
         _api = api;
         _gate = gate;
-        Id = "inbox";
+        Id = "paperless.inbox";
         Name = "Open";
         Title = "Paperless Inbox";
         Icon = Ui.Glyph("");
@@ -371,7 +371,7 @@ internal sealed partial class UploadPage : AsyncListPage
     {
         _api = api;
         _gate = gate;
-        Id = "upload-document";
+        Id = "paperless.upload-document";
         Name = "Open";
         Title = "Upload Document";
         Icon = Ui.Glyph("");

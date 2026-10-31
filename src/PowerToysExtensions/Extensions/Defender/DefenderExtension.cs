@@ -289,7 +289,7 @@ internal sealed partial class SearchPage : SearchListPage
     public SearchPage(DefenderContext context)
     {
         _context = context;
-        Id = "search";
+        Id = "defender.search";
         Name = "Durchsuchen";
         Title = "Schwachstellen durchsuchen";
         Icon = Glyphs.Shield;
@@ -346,7 +346,7 @@ internal sealed partial class TopActionsPage : AsyncListPage
     public TopActionsPage(DefenderContext context)
     {
         _context = context;
-        Id = "top-actions";
+        Id = "defender.top-actions";
         Name = "Öffnen";
         Title = "Top-Maßnahmen";
         Icon = Glyphs.Shield;
@@ -396,7 +396,7 @@ internal sealed partial class RefreshPage : ListPage
     public RefreshPage(DefenderContext context)
     {
         _context = context;
-        Id = "refresh-report";
+        Id = "defender.refresh-report";
         Name = "Öffnen";
         Title = "Schwachstellen-Report aktualisieren";
         Icon = Ui.Glyph("");
@@ -543,7 +543,7 @@ internal sealed partial class CredentialsPage : ListPage
     public CredentialsPage(DefenderContext context)
     {
         _context = context;
-        Id = "setup-credentials";
+        Id = "defender.setup-credentials";
         Name = "Öffnen";
         Title = "Defender-Zugangsdaten";
         Icon = Ui.Glyph("");
@@ -587,7 +587,7 @@ internal sealed partial class OpenReportCommand : InvokableCommand
     public OpenReportCommand(DefenderStore store)
     {
         _store = store;
-        Id = "open-report";
+        Id = "defender.open-report";
         Name = "Report öffnen";
         Icon = Glyphs.Report;
     }

@@ -31,7 +31,7 @@ public sealed partial class MtrProvider : CommandProvider
 
         _monitorItem = new CommandItem(new AnonymousCommand(() => Status.Start("Checking targets …", "Check finished", async () => Status.Info($"MTR: {await _monitor.Check(true)}")))
         {
-            Id = "monitor",
+            Id = "mtr.monitor",
             Name = "Check Now",
             Result = CommandResult.KeepOpen(),
         })
@@ -47,7 +47,7 @@ public sealed partial class MtrProvider : CommandProvider
             new CommandItem(new TracePickerPage(settings, store)) { Title = "Trace Route", Subtitle = "MTR · live traceroute with statistics" },
             new CommandItem(new TargetsPage(settings, store, _monitor)) { Title = "Monitored Targets", Subtitle = "MTR" },
             _monitorItem,
-            new CommandItem(new AnonymousCommand(() => OpenReport(store)) { Id = "open-report", Name = "Open", Result = CommandResult.Dismiss() }) { Title = "Open MTR Report", Icon = Ui.Glyph("") },
+            new CommandItem(new AnonymousCommand(() => OpenReport(store)) { Id = "mtr.open-report", Name = "Open", Result = CommandResult.Dismiss() }) { Title = "Open MTR Report", Icon = Ui.Glyph("") },
         ];
     }
 
@@ -78,7 +78,7 @@ internal sealed partial class TracePickerPage : DynamicListPage
     {
         _settings = settings;
         _store = store;
-        Id = "trace";
+        Id = "mtr.trace";
         Name = "Open";
         Title = "Trace Route";
         Icon = Ui.Glyph("");
@@ -330,7 +330,7 @@ internal sealed partial class TargetsPage : AsyncListPage
         _settings = settings;
         _store = store;
         _monitor = monitor;
-        Id = "targets";
+        Id = "mtr.targets";
         Name = "Open";
         Title = "Monitored Targets";
         Icon = Ui.Glyph("");

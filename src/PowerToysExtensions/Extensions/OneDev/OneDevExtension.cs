@@ -180,7 +180,7 @@ internal sealed partial class ProjectsPage : SearchListPage
     public ProjectsPage(OneDevApi api)
     {
         _api = api;
-        Id = "search-projects";
+        Id = "onedev.search-projects";
         Name = "Open";
         Title = "OneDev Projects";
         Icon = Ui.Glyph("");

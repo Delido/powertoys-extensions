@@ -30,7 +30,7 @@ public sealed partial class CheckmkProvider : CommandProvider
         Settings = settings.Settings;
 
         _monitor = new CheckmkMonitor(api);
-        _monitorItem = new CommandItem(new AnonymousCommand(() => _monitor.CheckNow()) { Id = "monitor", Name = "Check Now", Result = CommandResult.KeepOpen() })
+        _monitorItem = new CommandItem(new AnonymousCommand(() => _monitor.CheckNow()) { Id = "checkmk.monitor", Name = "Check Now", Result = CommandResult.KeepOpen() })
         {
             Title = "Checkmk Problem Monitor",
             Icon = Ui.Glyph(""),
@@ -283,7 +283,7 @@ internal sealed partial class ProblemsPage : AsyncListPage
     public ProblemsPage(CheckmkApi api)
     {
         _api = api;
-        Id = "problems";
+        Id = "checkmk.problems";
         Name = "Open";
         Title = "Checkmk Problems";
         Icon = Ui.Glyph("");
@@ -333,7 +333,7 @@ internal sealed partial class HostsPage : SearchListPage
     public HostsPage(CheckmkApi api)
     {
         _api = api;
-        Id = "search-hosts";
+        Id = "checkmk.search-hosts";
         Name = "Open";
         Title = "Checkmk Hosts";
         Icon = Ui.Glyph("");
@@ -380,7 +380,7 @@ internal sealed partial class ServicesPage : SearchListPage
     public ServicesPage(CheckmkApi api)
     {
         _api = api;
-        Id = "search-services";
+        Id = "checkmk.search-services";
         Name = "Open";
         Title = "Checkmk Services";
         Icon = Ui.Glyph("");
