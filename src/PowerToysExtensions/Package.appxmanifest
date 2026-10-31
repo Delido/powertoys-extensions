@@ -59,6 +59,7 @@
               <com:Class Id="B03F6BE3-D6A0-4CDB-960C-61F656A4AC25" DisplayName="MTR" />
               <com:Class Id="8082F478-79FE-4756-8086-CBC290CF8F26" DisplayName="SignalRGB" />
               <com:Class Id="3DB56E8C-615F-406D-B131-0A5909ADDAF4" DisplayName="Paperless-ngx" />
+              <com:Class Id="ADC097CC-3638-4EF1-AC55-6182E2CD8836" DisplayName="SSH Sessions" />
             </com:ExeServer>
           </com:ComServer>
         </com:Extension>
@@ -191,6 +192,17 @@
             <uap3:Properties>
               <CmdPalProvider>
                 <Activation><CreateInstance ClassId="3DB56E8C-615F-406D-B131-0A5909ADDAF4" /></Activation>
+                <SupportedInterfaces><Commands /></SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette" Id="Ssh" PublicFolder="Public"
+            DisplayName="SSH Sessions" Description="Find and connect to SSH hosts, team host lists, SOCKS tunnel with browser, SFTP file browser">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation><CreateInstance ClassId="ADC097CC-3638-4EF1-AC55-6182E2CD8836" /></Activation>
                 <SupportedInterfaces><Commands /></SupportedInterfaces>
               </CmdPalProvider>
             </uap3:Properties>

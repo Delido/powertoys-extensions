@@ -12,6 +12,7 @@ using PowerToysExtensions.Extensions.Paperless;
 using PowerToysExtensions.Extensions.PowerPlan;
 using PowerToysExtensions.Extensions.SignalRgb;
 using PowerToysExtensions.Extensions.SnipeIt;
+using PowerToysExtensions.Extensions.Ssh;
 using Shmuelie.WinRTServer.CsWinRT;
 
 namespace PowerToysExtensions;
@@ -44,6 +45,7 @@ public static class Program
         Register(server, () => new MtrExtension());
         Register(server, () => new SignalRgbExtension());
         Register(server, () => new PaperlessExtension());
+        Register(server, () => new SshExtension());
 
         server.Start();
         ExtensionBase.AllDisposed.WaitOne();
