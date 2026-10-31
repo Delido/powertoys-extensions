@@ -50,7 +50,9 @@ Weitere folgen: SharePoint, Teams, Defender Schwachstellen, GPT4Free. *Window Dr
 
 Die Command Palette lässt sich in PowerToys nur auf Tastenkombinationen legen (Standard **Win+Alt+Space**), nicht auf die Win-Taste allein. Auch der Tastatur-Manager hilft nicht: Er kann Win nur komplett umbelegen, dann gehen Win+E, Win+L usw. nicht mehr.
 
-**Launcher Key** löst das wie Raycast: Ein **kurzes Antippen** von Win allein öffnet die Command Palette statt des Startmenüs. Win zusammen mit einer anderen Taste funktioniert weiter normal, das Startmenü öffnest du dann mit **Ctrl+Esc**. Einschalten unter **Einstellungen → Erweiterungen → Launcher Key** oder mit dem Befehl *Toggle Windows Key for Command Palette*.
+**Launcher Key** löst das wie Raycast: Ein **kurzes Antippen** von Win allein öffnet die Command Palette, ein zweites Antippen schließt sie wieder. Win zusammen mit einer anderen Taste funktioniert weiter normal, das Startmenü öffnest du mit **Ctrl+Esc**. Ist ein Administrator-Fenster im Vordergrund, verhält sich Win ganz normal, weil Windows dort keine eingeschleusten Tasten erlaubt. Einschalten unter **Einstellungen → Erweiterungen → Launcher Key** oder mit dem Befehl *Toggle Windows Key for Command Palette*.
+
+Technisch läuft der Tastatur-Hook als eigener kleiner Prozess (`launcher-key.exe`). Er hängt damit nicht an den übrigen Erweiterungen und öffnet die Palette auch, wenn sie gerade neu startet. Win-Loslassen wird nie abgefangen, die Taste kann also nicht „hängen bleiben“.
 
 Nutzt du parallel Raycast mit der Win-Taste, stell dort ein anderes Kürzel ein (z. B. Alt+Space). Die Win-Taste kann immer nur ein Launcher bekommen.
 
