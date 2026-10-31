@@ -429,6 +429,12 @@ internal sealed partial class RefreshPage : ListPage
             });
         }
 
+        if (!settings.Demo)
+        {
+            // try everything without Defender access; the next real run replaces it
+            items.Add(new ListItem(new ProgressPage(_context, demo: true, () => RaiseItemsChanged())) { Title = "Demo-Report erzeugen", Subtitle = "Beispieldaten zum Ausprobieren, ohne Verbindung zu Defender", Icon = Ui.Glyph("") });
+        }
+
         try
         {
             var m = new DefenderModel(_context.Store.Load());
