@@ -242,7 +242,7 @@ public sealed partial class LapsProvider : CommandProvider
         Settings = api.Settings.Settings;
         _commands =
         [
-            new CommandItem(new ConnectPage(api, gate)) { Title = "LAPS Connect", Subtitle = "WireGuard device → LAPS password → SSH or RDP" },
+            new CommandItem(new ConnectPage(api, gate)) { Title = "LAPS Connect", Subtitle = "WireGuard · LAPS" },
             new CommandItem(new AnonymousCommand(() =>
             {
                 api.Vault.LockNow();

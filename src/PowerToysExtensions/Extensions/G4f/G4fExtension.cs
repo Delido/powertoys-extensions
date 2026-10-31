@@ -25,14 +25,14 @@ public sealed partial class G4fProvider : CommandProvider
         DisplayName = "GPT4Free";
         Icon = Ui.Glyph("");
         Settings = context.Settings.Settings;
-        var asks = Prompts.Commands.Select(spec => (ICommandItem)new CommandItem(new AskPage(context, spec)) { Title = spec.Title, Subtitle = spec.Subtitle }).ToList();
-        asks.Insert(1, new CommandItem(context.Chat) { Title = "AI Chat", Subtitle = "GPT4Free · chat with your AI models, history is kept" });
+        var asks = Prompts.Commands.Select(spec => (ICommandItem)new CommandItem(new AskPage(context, spec)) { Title = spec.Title, Subtitle = "GPT4Free" }).ToList();
+        asks.Insert(1, new CommandItem(context.Chat) { Title = "AI Chat", Subtitle = "GPT4Free" });
         _commands =
         [
             .. asks,
-            new CommandItem(new ImagePage(context)) { Title = "Generate Images", Subtitle = "GPT4Free · images from a text prompt" },
-            new CommandItem(new CustomCommandsPage(context)) { Title = "Custom AI Commands", Subtitle = "GPT4Free · your own prompts with placeholders" },
-            new CommandItem(new PreferencesPage(context)) { Title = "GPT4Free Preferences", Subtitle = "APIs, default model, AI presets" },
+            new CommandItem(new ImagePage(context)) { Title = "Generate Images", Subtitle = "GPT4Free" },
+            new CommandItem(new CustomCommandsPage(context)) { Title = "Custom AI Commands", Subtitle = "GPT4Free" },
+            new CommandItem(new PreferencesPage(context)) { Title = "GPT4Free Preferences", Subtitle = "GPT4Free" },
         ];
     }
 

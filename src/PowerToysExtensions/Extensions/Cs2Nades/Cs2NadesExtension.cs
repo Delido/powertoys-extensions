@@ -46,7 +46,7 @@ public sealed partial class Cs2NadesProvider : CommandProvider
         DisplayName = "CS2 Nades";
         Icon = Ui.Glyph("\uE945");
         Settings = settings.Settings;
-        _commands = [new CommandItem(new NadesPage(settings)) { Title = "CS2 Nades", Subtitle = "Smoke, molotov, flash and HE lineups of the Premier maps · csnades.gg" }];
+        _commands = [new CommandItem(new NadesPage(settings)) { Title = "CS2 Nades", Subtitle = "csnades.gg" }];
     }
 
     public override ICommandItem[] TopLevelCommands() => _commands;

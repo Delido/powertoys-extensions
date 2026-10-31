@@ -27,13 +27,13 @@ public sealed partial class TeamsProvider : CommandProvider
         Settings = api.Settings.Settings;
         _commands =
         [
-            new CommandItem(new PeoplePage(api)) { Title = "Search People", Subtitle = "Teams · chat, call or message colleagues, see their status" },
-            new CommandItem(new ChatsPage(api)) { Title = "Search Chats", Subtitle = "Teams · recent chats" },
-            new CommandItem(new ChannelsPage(api)) { Title = "Teams & Channels", Subtitle = "Teams · open or post to a channel" },
-            new CommandItem(new MessagesPage(api)) { Title = "Search Messages", Subtitle = "Teams · full-text search in chats and channels" },
-            new CommandItem(new StatusPage(api)) { Title = "Set Teams Status", Subtitle = "Teams · availability and status message" },
-            new CommandItem(new MeetingsPage(api)) { Title = "Upcoming Meetings", Subtitle = "Teams · the next 7 days" },
-            new CommandItem(new JoinNextMeetingCommand(api)) { Title = "Join Next Meeting", Subtitle = "Teams · the running meeting or the next one within 30 minutes" },
+            new CommandItem(new PeoplePage(api)) { Title = "Search People", Subtitle = "Teams" },
+            new CommandItem(new ChatsPage(api)) { Title = "Search Chats", Subtitle = "Teams" },
+            new CommandItem(new ChannelsPage(api)) { Title = "Teams & Channels", Subtitle = "Teams" },
+            new CommandItem(new MessagesPage(api)) { Title = "Search Messages", Subtitle = "Teams" },
+            new CommandItem(new StatusPage(api)) { Title = "Set Teams Status", Subtitle = "Teams" },
+            new CommandItem(new MeetingsPage(api)) { Title = "Upcoming Meetings", Subtitle = "Teams" },
+            new CommandItem(new JoinNextMeetingCommand(api)) { Title = "Join Next Meeting", Subtitle = "Teams" },
         ];
     }
 

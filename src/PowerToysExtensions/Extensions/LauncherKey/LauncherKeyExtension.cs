@@ -87,9 +87,7 @@ public sealed partial class LauncherKeyProvider : CommandProvider
     private void Apply()
     {
         Ensure();
-        _toggle.Subtitle = _settings.Enabled
-            ? "On – tapping Win opens Command Palette"
-            : "Off – Win opens the Start menu";
+        _toggle.Subtitle = _settings.Enabled ? "On" : "Off";
     }
 
     private void Ensure()

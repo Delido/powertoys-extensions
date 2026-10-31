@@ -26,7 +26,7 @@ public sealed partial class AmpProvider : CommandProvider
         Settings = api.Settings.Settings;
         _commands =
         [
-            new CommandItem(new ServersPage(api)) { Title = "Manage Servers", Subtitle = "AMP game servers" },
+            new CommandItem(new ServersPage(api)) { Title = "Manage Servers", Subtitle = "AMP" },
             new CommandItem(new AppsPage(api, null)) { Title = "Create Game Server", Subtitle = "AMP" },
         ];
     }

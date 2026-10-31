@@ -27,7 +27,7 @@ public sealed partial class SnipeItProvider : CommandProvider
         _commands =
         [
             new CommandItem(new AssetsPage(api)) { Title = "Search Assets", Subtitle = "Snipe-IT" },
-            new CommandItem(new LookupPage(api)) { Title = "Look up Asset", Subtitle = "Snipe-IT · by asset tag or serial (barcode scanner)" },
+            new CommandItem(new LookupPage(api)) { Title = "Look up Asset", Subtitle = "Snipe-IT" },
             new CommandItem(new UsersPage(api)) { Title = "Search Users", Subtitle = "Snipe-IT" },
             new CommandItem(new LicensesPage(api)) { Title = "Search Licenses", Subtitle = "Snipe-IT" },
             new CommandItem(new InventoryPage(api)) { Title = "Accessories & Consumables", Subtitle = "Snipe-IT" },

@@ -63,7 +63,7 @@ public sealed partial class SshProvider : CommandProvider
         _commands =
         [
             new CommandItem(new HostsPage(ctx)) { Title = "Search SSH Hosts", Subtitle = "SSH" },
-            new CommandItem(new SourcesPage(ctx)) { Title = "Manage SSH Sources", Subtitle = "SSH · team host lists, personal defaults" },
+            new CommandItem(new SourcesPage(ctx)) { Title = "Manage SSH Sources", Subtitle = "SSH" },
         ];
 
         // replaces Raycast's hourly "Sync SSH Sources" command

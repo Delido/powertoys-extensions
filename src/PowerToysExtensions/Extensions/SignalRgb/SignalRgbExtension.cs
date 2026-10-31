@@ -39,7 +39,7 @@ public sealed partial class SignalRgbProvider : CommandProvider
         _band = new CommandItem(new AnonymousCommand(() => ToggleMic()) { Id = "signalrgb.mic-band", Name = "Toggle Microphone", Result = CommandResult.KeepOpen() }) { Title = "Mic" };
         _commands =
         [
-            new CommandItem(new SensorsPage(api)) { Title = "PC Sensors", Subtitle = "SignalRGB · live temperatures, fans, load" },
+            new CommandItem(new SensorsPage(api)) { Title = "PC Sensors", Subtitle = "SignalRGB" },
             new CommandItem(new EffectsPage(api)) { Title = "Lighting Effects", Subtitle = "SignalRGB" },
             Quick("next-effect", "Next Effect", "", async () => $"🎨 {await api.Step("next")}"),
             Quick("previous-effect", "Previous Effect", "", async () => $"🎨 {await api.Step("previous")}"),
@@ -51,7 +51,7 @@ public sealed partial class SignalRgbProvider : CommandProvider
                 return enabled ? "💡 Lighting off" : "💡 Lighting on";
             }),
             new CommandItem(new BrightnessPage(api)) { Title = "Set Brightness", Subtitle = "SignalRGB" },
-            new CommandItem(new AudioOutputPage(_companion)) { Title = "Switch Audio Output", Subtitle = "SignalRGB companion" },
+            new CommandItem(new AudioOutputPage(_companion)) { Title = "Switch Audio Output", Subtitle = "SignalRGB" },
             Quick("next-audio-output", "Next Audio Output", "", async () =>
             {
                 await _companion.NextAudioDevice();

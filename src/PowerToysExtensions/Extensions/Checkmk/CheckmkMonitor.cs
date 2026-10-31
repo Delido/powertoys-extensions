@@ -28,11 +28,11 @@ internal sealed class CheckmkMonitor(CheckmkApi api) : IDisposable
         _timer = null;
         if (!api.Settings.MonitorEnabled || !api.Settings.Configured)
         {
-            StatusChanged?.Invoke(api.Settings.Configured ? "Off – switch it on in the settings" : "Set up Checkmk in the settings first");
+            StatusChanged?.Invoke(api.Settings.Configured ? "Off" : "Not set up");
             return;
         }
 
-        StatusChanged?.Invoke($"On – checks every {api.Settings.CheckEvery.TotalMinutes:0} min");
+        StatusChanged?.Invoke($"On · every {api.Settings.CheckEvery.TotalMinutes:0} min");
         _timer = new Timer(_ => _ = Check(manual: false), null, TimeSpan.FromSeconds(10), api.Settings.CheckEvery);
     }
 

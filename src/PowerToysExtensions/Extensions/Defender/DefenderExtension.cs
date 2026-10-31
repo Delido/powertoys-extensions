@@ -100,11 +100,11 @@ public sealed partial class DefenderProvider : CommandProvider
         Settings = context.Settings.Settings;
         _commands =
         [
-            new CommandItem(new SearchPage(context)) { Title = "Schwachstellen durchsuchen", Subtitle = "Defender · CVEs, Software und Geräte inklusive Fundstellen" },
-            new CommandItem(new TopActionsPage(context)) { Title = "Top-Maßnahmen", Subtitle = "Defender · welche Maßnahme entfernt das meiste Risiko?" },
-            new CommandItem(new RefreshPage(context)) { Title = "Schwachstellen-Report aktualisieren", Subtitle = "Defender · aktuelle Daten holen und den Report neu erzeugen" },
-            new CommandItem(new OpenReportCommand(context.Store)) { Title = "Schwachstellen-Report öffnen", Subtitle = "Defender · aktuellen HTML-Report im Browser öffnen" },
-            new CommandItem(new CredentialsPage(context)) { Title = "Defender-Zugangsdaten verwalten", Subtitle = "Defender · Secret hinterlegen, erneuern, Passwort ändern" },
+            new CommandItem(new SearchPage(context)) { Title = "Schwachstellen durchsuchen", Subtitle = "Defender" },
+            new CommandItem(new TopActionsPage(context)) { Title = "Top-Maßnahmen", Subtitle = "Defender" },
+            new CommandItem(new RefreshPage(context)) { Title = "Schwachstellen-Report aktualisieren", Subtitle = "Defender" },
+            new CommandItem(new OpenReportCommand(context.Store)) { Title = "Schwachstellen-Report öffnen", Subtitle = "Defender" },
+            new CommandItem(new CredentialsPage(context)) { Title = "Defender-Zugangsdaten verwalten", Subtitle = "Defender" },
         ];
     }
 

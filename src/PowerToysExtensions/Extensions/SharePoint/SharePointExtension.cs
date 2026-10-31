@@ -58,7 +58,7 @@ public sealed partial class SharePointProvider : CommandProvider
         DisplayName = "SharePoint";
         Icon = Glyphs.Site;
         Settings = settings.Settings;
-        _commands = [new CommandItem(new SearchPage(graph, settings)) { Title = "Search SharePoint", Subtitle = "Full-text search across SharePoint documents, pages and sites" }];
+        _commands = [new CommandItem(new SearchPage(graph, settings)) { Title = "Search SharePoint", Subtitle = "SharePoint" }];
     }
 
     public override ICommandItem[] TopLevelCommands() => _commands;

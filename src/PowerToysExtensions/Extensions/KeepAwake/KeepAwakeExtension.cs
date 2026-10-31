@@ -56,7 +56,7 @@ public sealed partial class KeepAwakeProvider : CommandProvider
         var status = state is null ? "Off" : $"On {AwakeEngine.Describe(state)}";
         _main.Subtitle = status;
         _main.Icon = state is null ? SleepIcon : AwakeIcon;
-        _toggle.Subtitle = state is null ? "Switch on with the default duration" : $"{status} – switch off";
+        _toggle.Subtitle = status;
         _band.Title = state is null ? "Awake off" : "Awake";
         _band.Subtitle = state is null ? string.Empty : AwakeEngine.Describe(state);
         _band.Icon = state is null ? SleepIcon : AwakeIcon;

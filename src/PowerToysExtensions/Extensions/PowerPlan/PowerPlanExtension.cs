@@ -55,7 +55,7 @@ public sealed partial class PowerPlanProvider : CommandProvider
     {
         _plans.Subtitle = status;
         _band.Subtitle = status;
-        _toggle.Subtitle = _auto.Rules.Enabled ? "On – switch off" : "Off – switch on";
+        _toggle.Subtitle = _auto.Rules.Enabled ? "On" : "Off";
     }
 
     private void Toggle()

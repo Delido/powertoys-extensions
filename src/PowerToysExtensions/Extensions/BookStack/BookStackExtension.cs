@@ -27,7 +27,7 @@ public sealed partial class BookStackProvider : CommandProvider
         Settings = settings.Settings;
         _commands =
         [
-            new CommandItem(new SearchPage(api)) { Title = "Search BookStack", Subtitle = "Full-text search across pages, chapters, books and shelves" },
+            new CommandItem(new SearchPage(api)) { Title = "Search BookStack", Subtitle = "BookStack" },
             new CommandItem(new RecentPagesPage(api)) { Title = "Recently Updated Pages", Subtitle = "BookStack" },
             new CommandItem(new BooksPage(api)) { Title = "Browse Books", Subtitle = "BookStack" },
             new CommandItem(new ShelvesPage(api)) { Title = "Browse Shelves", Subtitle = "BookStack" },

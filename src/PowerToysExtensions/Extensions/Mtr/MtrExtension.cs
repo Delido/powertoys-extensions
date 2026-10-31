@@ -44,7 +44,7 @@ public sealed partial class MtrProvider : CommandProvider
         _monitor.StatusChanged += s => _monitorItem.Subtitle = s;
         _commands =
         [
-            new CommandItem(new TracePickerPage(settings, store)) { Title = "Trace Route", Subtitle = "MTR · live traceroute with statistics" },
+            new CommandItem(new TracePickerPage(settings, store)) { Title = "Trace Route", Subtitle = "MTR" },
             new CommandItem(new TargetsPage(settings, store, _monitor)) { Title = "Monitored Targets", Subtitle = "MTR" },
             _monitorItem,
             new CommandItem(new AnonymousCommand(() => OpenReport(store)) { Id = "mtr.open-report", Name = "Open", Result = CommandResult.Dismiss() }) { Title = "Open MTR Report", Icon = Ui.Glyph("") },
