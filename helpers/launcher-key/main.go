@@ -15,6 +15,8 @@
 //     (Sending the mask key right after Win-down does not stop the Start menu on Windows 11.)
 //   - Afterwards the helper checks that Win is really released and sends another Win-up if not, so
 //     the key can never stay logically pressed.
+//   - Only while Command Palette runs: once it is closed, Win is passed on at once (Start menu, or another
+//     launcher like Raycast) and the helper ends; the extension starts it again with Command Palette.
 //   - When an elevated window is in front, Windows drops injected keys (UIPI); the helper then leaves
 //     the key alone and Win opens the Start menu as usual.
 package main
@@ -27,6 +29,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 	"unsafe"
@@ -82,6 +85,7 @@ var (
 	hookThread              uint32
 	tapMs                   uint32 = 400
 	winDown, other          bool
+	paletteRunning          atomic.Bool
 	downTime, lastWinTime   uint32
 	opener                  = make(chan uint16, 4)
 	logger                  = log.New(os.Stderr, "", log.LstdFlags)
@@ -145,7 +149,7 @@ func handle(k *kbdLlHook, message uint32) bool {
 		return false
 	}
 	winDown = false
-	if other || k.Time-downTime > tapMs {
+	if other || k.Time-downTime > tapMs || !paletteRunning.Load() {
 		return false
 	}
 	if foregroundElevated() {
@@ -301,6 +305,43 @@ func watchSettings(path string) {
 	}
 }
 
+// paletteProcessRunning: is Microsoft.CmdPal.UI.exe running at all?
+func paletteProcessRunning() bool {
+	snapshot, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
+	if err != nil {
+		return true // unknown: keep working
+	}
+	defer windows.CloseHandle(snapshot)
+	var entry windows.ProcessEntry32
+	entry.Size = uint32(unsafe.Sizeof(entry))
+	for err = windows.Process32First(snapshot, &entry); err == nil; err = windows.Process32Next(snapshot, &entry) {
+		if strings.EqualFold(windows.UTF16ToString(entry.ExeFile[:]), "Microsoft.CmdPal.UI.exe") {
+			return true
+		}
+	}
+	return false
+}
+
+// watchPalette: the Windows key belongs to Command Palette only while it runs. Once it is closed,
+// Win is passed on at once (to the Start menu or another launcher such as Raycast) and the helper
+// ends a few seconds later; the extension starts it again with the next Command Palette.
+func watchPalette() {
+	missing := 0
+	for range time.Tick(time.Second) {
+		running := paletteProcessRunning()
+		paletteRunning.Store(running)
+		if running {
+			missing = 0
+			continue
+		}
+		if missing++; missing >= 5 {
+			logger.Printf("Command Palette is not running anymore")
+			quit()
+			return
+		}
+	}
+}
+
 func quit() { procPostThreadMessageW.Call(uintptr(hookThread), wmQuit, 0, 0) }
 
 func run(settings string) {
@@ -324,6 +365,8 @@ func run(settings string) {
 	if settings != "" {
 		go watchSettings(settings)
 	}
+	paletteRunning.Store(true)
+	go watchPalette()
 
 	if hook = installHook(); hook == 0 {
 		os.Exit(1)

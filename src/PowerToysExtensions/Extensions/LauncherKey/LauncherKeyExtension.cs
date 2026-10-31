@@ -16,7 +16,7 @@ public sealed class LauncherKeySettings : SettingsBase
     private readonly ToggleSetting _enabled = new(
         "enabled",
         "Open Command Palette with the Windows key",
-        "A short tap of the Windows key alone opens Command Palette (tap again to close it). Win + another key (Win+E, Win+L …) keeps working; the Start menu opens with Ctrl+Esc, or with Win while an administrator window is in front. Runs as its own small process (launcher-key.exe), so the key keeps working even while Command Palette restarts. If Raycast also uses the Windows key, set Raycast to another hotkey – only one launcher can own the key.",
+        "A short tap of the Windows key alone opens Command Palette (tap again to close it). Win + another key (Win+E, Win+L …) keeps working; the Start menu opens with Ctrl+Esc, or with Win while an administrator window is in front. Works only while Command Palette runs: close it and Win goes back to the Start menu (or Raycast). If Raycast also uses the Windows key, set Raycast to another hotkey – only one launcher can own the key.",
         false);
 
     public LauncherKeySettings()
@@ -59,8 +59,9 @@ public sealed partial class LauncherKeyProvider : CommandProvider
         _settings.Changed += Apply;
         Apply();
 
-        // the helper is a separate process; start it again should it ever end
-        _watchdog = new Timer(_ => Ensure(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+        // The helper ends when Command Palette closes; this process may outlive it and be reused by the
+        // next Command Palette, so check often and start the helper again as soon as the palette is back.
+        _watchdog = new Timer(_ => Ensure(), null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
     }
 
     public override ICommandItem[] TopLevelCommands() => [_toggle];
@@ -104,7 +105,7 @@ public sealed partial class LauncherKeyProvider : CommandProvider
                 running = KeyHelper.Running;
             }
 
-            if (_settings.Enabled && !running)
+            if (_settings.Enabled && !running && KeyHelper.PaletteRunning)
             {
                 KeyHelper.Start();
             }
@@ -130,6 +131,20 @@ internal static class KeyHelper
         get
         {
             var processes = System.Diagnostics.Process.GetProcessesByName("launcher-key");
+            foreach (var process in processes)
+            {
+                process.Dispose();
+            }
+
+            return processes.Length > 0;
+        }
+    }
+
+    public static bool PaletteRunning
+    {
+        get
+        {
+            var processes = System.Diagnostics.Process.GetProcessesByName("Microsoft.CmdPal.UI");
             foreach (var process in processes)
             {
                 process.Dispose();
