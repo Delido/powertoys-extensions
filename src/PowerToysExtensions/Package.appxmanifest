@@ -46,6 +46,8 @@
               <com:Class Id="AED9D9F3-C822-4EC2-9C30-B632C5293A98" DisplayName="Keep Awake" />
               <com:Class Id="C8E879D1-D35B-4FB7-93DC-269705348DB5" DisplayName="Launcher Key" />
               <com:Class Id="9F581994-065F-44D0-B6F1-A2E5F3DBFB53" DisplayName="BookStack" />
+              <com:Class Id="9AEC9729-A270-40D2-BA86-780721AA64AD" DisplayName="OneDev" />
+              <com:Class Id="EF36641F-2607-41D0-82D9-1DD1169D0D8C" DisplayName="Checkmk" />
             </com:ExeServer>
           </com:ComServer>
         </com:Extension>
@@ -79,6 +81,28 @@
             <uap3:Properties>
               <CmdPalProvider>
                 <Activation><CreateInstance ClassId="9F581994-065F-44D0-B6F1-A2E5F3DBFB53" /></Activation>
+                <SupportedInterfaces><Commands /></SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette" Id="OneDev" PublicFolder="Public"
+            DisplayName="OneDev" Description="Search projects, issues, pull requests and builds">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation><CreateInstance ClassId="9AEC9729-A270-40D2-BA86-780721AA64AD" /></Activation>
+                <SupportedInterfaces><Commands /></SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette" Id="Checkmk" PublicFolder="Public"
+            DisplayName="Checkmk" Description="Problems, hosts and services, acknowledge and downtimes, background problem monitor">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation><CreateInstance ClassId="EF36641F-2607-41D0-82D9-1DD1169D0D8C" /></Activation>
                 <SupportedInterfaces><Commands /></SupportedInterfaces>
               </CmdPalProvider>
             </uap3:Properties>

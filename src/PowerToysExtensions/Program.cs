@@ -1,8 +1,10 @@
 using Microsoft.CommandPalette.Extensions;
 using PowerToysExtensions.Core;
 using PowerToysExtensions.Extensions.BookStack;
+using PowerToysExtensions.Extensions.Checkmk;
 using PowerToysExtensions.Extensions.KeepAwake;
 using PowerToysExtensions.Extensions.LauncherKey;
+using PowerToysExtensions.Extensions.OneDev;
 using Shmuelie.WinRTServer.CsWinRT;
 
 namespace PowerToysExtensions;
@@ -26,6 +28,8 @@ public static class Program
         Register(server, () => new KeepAwakeExtension());
         Register(server, () => new LauncherKeyExtension());
         Register(server, () => new BookStackExtension());
+        Register(server, () => new OneDevExtension());
+        Register(server, () => new CheckmkExtension());
 
         server.Start();
         ExtensionBase.AllDisposed.WaitOne();
