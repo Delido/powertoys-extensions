@@ -119,6 +119,11 @@ internal static partial class WinKeyHook
                 _winDown = true;
                 _otherKey = false;
                 _downTime = key.Time;
+
+                // Mask the press right away: the unassigned key is queued behind this Win-down, so Windows
+                // sees "Win + another key" and never opens the Start menu on release. Nothing is swallowed,
+                // the real Win-up still reaches Windows and every other hook (no stuck Win key).
+                Native.SendKeys(VkUnassigned);
             }
 
             return false;
@@ -130,21 +135,31 @@ internal static partial class WinKeyHook
         }
 
         _winDown = false;
-        if (_otherKey || unchecked(key.Time - _downTime) > MaxTapMs)
+        if (!_otherKey && unchecked(key.Time - _downTime) <= MaxTapMs)
         {
-            return false;
+            // Opened after the real Win-up has been processed; one SendInput batch cannot be interleaved
+            // with what the user types next
+            Opener.Add(PaletteHotkey);
         }
 
-        // Swallow this Win-up and replay it after a dummy key, so Windows does not open the Start menu,
-        // then press the Command Palette hotkey. SendInput must not run inside the hook callback.
-        var vk = (ushort)key.Vk;
-        ThreadPool.QueueUserWorkItem(_ =>
+        return false;
+    }
+
+    // Single worker so hotkey presses never overlap or wait for the thread pool
+    private static readonly System.Collections.Concurrent.BlockingCollection<Func<ushort[]>> Opener = StartOpener();
+
+    private static System.Collections.Concurrent.BlockingCollection<Func<ushort[]>> StartOpener()
+    {
+        var queue = new System.Collections.Concurrent.BlockingCollection<Func<ushort[]>>();
+        new Thread(() =>
         {
-            Native.SendKeys(VkUnassigned);
-            Native.SendInput(1, [new Native.Input { Type = Native.InputKeyboard, Keyboard = new Native.KeyboardInput { Vk = vk, Flags = Native.KeyeventfKeyup | Native.KeyeventfExtendedkey } }], Marshal.SizeOf<Native.Input>());
-            Native.SendKeys(PaletteHotkey());
-        });
-        return true;
+            foreach (var keys in queue.GetConsumingEnumerable())
+            {
+                Native.SendKeys(keys());
+            }
+        })
+        { IsBackground = true, Name = "LauncherKeyOpener" }.Start();
+        return queue;
     }
 
     /// <summary>The activation hotkey configured in Command Palette (default Win+Alt+Space).</summary>

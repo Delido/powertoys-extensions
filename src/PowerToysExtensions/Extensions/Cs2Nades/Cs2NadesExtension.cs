@@ -153,6 +153,9 @@ internal sealed partial class NadesPage : AsyncListPage
         Reload();
     }
 
+    /// <summary>Command Palette image hint: scale down to the pane instead of filling it zoomed in.</summary>
+    internal static string Fit(string url) => $"{url}?--x-cmdpal-fit=fit";
+
     private static Tag TeamTag(string team) => team == "t" ? Ui.Yellow("T") : Ui.Blue("CT");
 
     private ListItem Item(Nade n, string section)
@@ -160,8 +163,8 @@ internal sealed partial class NadesPage : AsyncListPage
         var nextSide = _side switch { "all" => "T Side", "t" => "CT Side", _ => "T + CT" };
         var body = string.Join("\n\n", new[]
         {
-            n.Lineup.Length > 0 ? $"![Lineup]({n.Lineup})" : string.Empty,
-            n.Thumbnail.Length > 0 ? $"![Landing spot]({n.Thumbnail})" : string.Empty,
+            n.Lineup.Length > 0 ? $"![Lineup]({Fit(n.Lineup)})" : string.Empty,
+            n.Thumbnail.Length > 0 ? $"![Landing spot]({Fit(n.Thumbnail)})" : string.Empty,
             $"_Enter shows the video · Source: [csnades.gg]({n.Url})_",
         }.Where(s => s.Length > 0));
 
@@ -176,6 +179,7 @@ internal sealed partial class NadesPage : AsyncListPage
             {
                 Title = n.To,
                 Body = body,
+                Size = ContentSize.Large,
                 Metadata =
                 [
                     Ui.Label("Target", n.To),
@@ -259,7 +263,7 @@ internal sealed partial class NadeVideoPage : ContentPage
     }
 
     private void Show(string video) =>
-        _content.Body = $"{video}\n\n{(_nade.Lineup.Length > 0 ? $"![Lineup]({_nade.Lineup})" : string.Empty)}\n\n_Source: [csnades.gg]({_nade.Url})_";
+        _content.Body = $"{video}\n\n{(_nade.Lineup.Length > 0 ? $"![Lineup]({NadesPage.Fit(_nade.Lineup)})" : string.Empty)}\n\n_Source: [csnades.gg]({_nade.Url})_";
 
     private async Task Prepare()
     {
@@ -271,7 +275,7 @@ internal sealed partial class NadeVideoPage : ContentPage
 
         if (NadeVideo.Cached(_nade) is { } cached)
         {
-            Show($"![Video]({NadeVideo.FileUrl(cached)})");
+            Show($"![Video]({NadesPage.Fit(NadeVideo.FileUrl(cached))})");
             return;
         }
 
@@ -288,7 +292,7 @@ internal sealed partial class NadeVideoPage : ContentPage
         try
         {
             var gif = await NadeVideo.Make(_nade, ffmpeg, CancellationToken.None);
-            Show($"![Video]({NadeVideo.FileUrl(gif)})");
+            Show($"![Video]({NadesPage.Fit(NadeVideo.FileUrl(gif))})");
         }
         catch (Exception ex)
         {

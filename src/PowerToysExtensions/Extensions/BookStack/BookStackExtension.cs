@@ -191,7 +191,9 @@ internal sealed partial class SearchPage : SearchListPage
             Subtitle = location.Length > 0 ? location : preview,
             Icon = Glyph.For(r.Type),
             Tags = [.. listTags],
-            Details = new Details { Title = r.Name, Body = preview, Metadata = [.. metadata] },
+            Details = r.Type == "page"
+                ? new PagePreview(_api, r.Id, r.Name) { Title = r.Name, Metadata = [.. metadata] }
+                : new Details { Title = r.Name, Body = preview, Metadata = [.. metadata], Size = ContentSize.Medium },
             MoreCommands = Items.LinkActions(r.Url, r.Name),
         };
     }

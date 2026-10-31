@@ -16,7 +16,7 @@ public sealed class LauncherKeySettings : SettingsBase
     private readonly ToggleSetting _enabled = new(
         "enabled",
         "Open Command Palette with the Windows key",
-        "A short tap of the Windows key alone opens Command Palette instead of the Start menu. Win + another key (Win+E, Win+L …) and holding Win keep working. If Raycast also uses the Windows key, set Raycast to another hotkey (e.g. Alt+Space) – only one launcher can own the key.",
+        "A short tap of the Windows key alone opens Command Palette instead of the Start menu. Win + another key (Win+E, Win+L …) keeps working; the Start menu opens with Ctrl+Esc. If Raycast also uses the Windows key, set Raycast to another hotkey (e.g. Alt+Space) – only one launcher can own the key.",
         false);
 
     public LauncherKeySettings()
