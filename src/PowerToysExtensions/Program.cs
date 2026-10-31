@@ -7,6 +7,7 @@ using PowerToysExtensions.Extensions.Cs2Nades;
 using PowerToysExtensions.Extensions.KeepAwake;
 using PowerToysExtensions.Extensions.LauncherKey;
 using PowerToysExtensions.Extensions.OneDev;
+using PowerToysExtensions.Extensions.PowerPlan;
 using PowerToysExtensions.Extensions.SnipeIt;
 using Shmuelie.WinRTServer.CsWinRT;
 
@@ -36,6 +37,7 @@ public static class Program
         Register(server, () => new SnipeItExtension());
         Register(server, () => new Cs2NadesExtension());
         Register(server, () => new AmpExtension());
+        Register(server, () => new PowerPlanExtension());
 
         server.Start();
         ExtensionBase.AllDisposed.WaitOne();

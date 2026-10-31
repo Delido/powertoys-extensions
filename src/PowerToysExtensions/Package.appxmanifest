@@ -51,6 +51,7 @@
               <com:Class Id="874E31EE-457E-4C41-93E1-0FF6B4A3ED1B" DisplayName="Snipe-IT" />
               <com:Class Id="E1E42D05-6701-4E8B-9D0D-CA638E908459" DisplayName="CS2 Nades" />
               <com:Class Id="A8FEC8D3-23D2-4CF0-8D95-2E549EF2F024" DisplayName="AMP" />
+              <com:Class Id="8B555E16-BD45-431F-8AFF-8CD8B56BD750" DisplayName="Power Plan" />
             </com:ExeServer>
           </com:ComServer>
         </com:Extension>
@@ -139,6 +140,17 @@
             <uap3:Properties>
               <CmdPalProvider>
                 <Activation><CreateInstance ClassId="A8FEC8D3-23D2-4CF0-8D95-2E549EF2F024" /></Activation>
+                <SupportedInterfaces><Commands /></SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette" Id="PowerPlan" PublicFolder="Public"
+            DisplayName="Power Plan" Description="Switch power plans, high performance automatically while gaming">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation><CreateInstance ClassId="8B555E16-BD45-431F-8AFF-8CD8B56BD750" /></Activation>
                 <SupportedInterfaces><Commands /></SupportedInterfaces>
               </CmdPalProvider>
             </uap3:Properties>
