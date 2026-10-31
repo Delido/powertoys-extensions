@@ -30,7 +30,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="Assets\**\*.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\**\*.*" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Helpers\**\*.exe" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

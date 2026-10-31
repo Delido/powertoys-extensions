@@ -1,0 +1,262 @@
+<head>
+  <title>CS2 Reactive (SignalCompanion)</title>
+  <meta description="Counter-Strike 2 reactive lighting via the SignalCompanion HTTPS bridge (no screen capture, pure GSI): HP gradient or a configurable health bar, low-HP pulse, kill flash, flashbang white-out, smoke/molotov tints, a bomb tick synced to the C4 fuse, explosion/defuse, round win/loss flash, and a death fade-to-black with a spectating glow." />
+  <meta publisher="SignalCompanion" />
+  <meta property="brightness" label="Brightness" type="number" min="0" max="100" default="100" />
+  <meta property="healthBar" label="Health bar (instead of full glow)" type="boolean" default="0" />
+  <meta property="hbColor" label="Health bar color" type="color" min="0" max="360" default="#27d645" />
+  <meta property="hbX" label="Health bar X" type="number" min="0" max="320" default="0" />
+  <meta property="hbY" label="Health bar Y" type="number" min="0" max="200" default="60" />
+  <meta property="hbW" label="Health bar width" type="number" min="10" max="320" default="320" />
+  <meta property="hbH" label="Health bar height" type="number" min="4" max="200" default="80" />
+  <meta property="lowHpPulse" label="Low-HP edge pulse" type="boolean" default="1" />
+  <meta property="killFlash" label="Kill flash" type="boolean" default="1" />
+  <meta property="flashFx" label="Flashbang white-out" type="boolean" default="1" />
+  <meta property="smokeFx" label="Smoke and molotov tints" type="boolean" default="1" />
+  <meta property="bombFx" label="Bomb tick and explosion" type="boolean" default="1" />
+  <meta property="bombSpeed" label="Bomb tick speed" type="combobox" values="Calm,Real C4,Steady" default="Calm" />
+  <meta property="winFx" label="Round win / loss flash" type="boolean" default="1" />
+  <meta property="deathFx" label="Death fade to black" type="boolean" default="1" />
+</head>
+
+<body style="margin: 0; padding: 0; background: black">
+  <canvas id="exCanvas" width="320" height="200"></canvas>
+</body>
+
+<script>
+  var VER = "v2.5";
+  var c = document.getElementById("exCanvas");
+  var ctx = c.getContext("2d");
+  var W = 320, H = 200, CX = 160, CY = 100, MAXR = 200;
+
+  var state = { connected: false };
+  var okCount = 0, errCount = 0, lastOk = -99999, fetching = false, lastPoll = 0;
+  var lastNow = 0, lastTeam = null;
+  var prevBomb = null, prevKills = null, prevPhase = null, wasDead = false;
+  var bombAt = -1, bombPhase = 0, deathAt = -1;
+  // Fuse clock: cdBase is the last real countdown from GSI, stamped at cdStamp,
+  // so we can extrapolate a smooth remaining time at 60fps between ~20Hz updates.
+  var cdBase = -1, cdStamp = 0, lastCdRaw = -1;
+  var explodeUntil = -1, defuseUntil = -1, killUntil = -1, winUntil = -1, lossUntil = -1;
+
+  function num(v, d) { v = +v; return isFinite(v) ? v : d; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+  function prop(name, def) { try { var v = window[name]; return (v === undefined || v === null) ? def : v; } catch (e) { return def; } }
+  function flag(name) { return !!Number(prop(name, 1)); }
+  function hexToRgb(h) {
+    try {
+      h = String(h).replace("#", "");
+      if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+      var n = parseInt(h, 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    } catch (e) { return [39, 214, 69]; }
+  }
+
+  function teamCol(team) {
+    if (team === "T") return [230, 150, 0];
+    if (team === "CT") return [0, 90, 230];
+    return [0, 120, 180];
+  }
+
+  function poll() {
+    if (fetching) return;
+    fetching = true;
+    var done = false; function fin() { if (!done) { done = true; fetching = false; } }
+    try {
+      var ctrl = (typeof AbortController === "function") ? new AbortController() : null;
+      var opts = { method: "POST", body: "1", cache: "no-store" };
+      if (ctrl) opts.signal = ctrl.signal;
+      var timer = setTimeout(function () { errCount++; if (ctrl) { try { ctrl.abort(); } catch (e) {} } fin(); }, 800);
+      fetch("https://127.0.0.1:3443/state", opts)
+        .then(function (r) { return r.json(); })
+        .then(function (s) { clearTimeout(timer); if (s && typeof s === "object") { state = s; okCount++; lastOk = Date.now(); } fin(); })
+        .catch(function () { clearTimeout(timer); errCount++; fin(); });
+    } catch (e) { errCount++; fin(); }
+  }
+
+  function fillAll(r, g, b) {
+    ctx.fillStyle = "rgb(" + (clamp(num(r, 0), 0, 255) | 0) + "," + (clamp(num(g, 0), 0, 255) | 0) + "," + (clamp(num(b, 0), 0, 255) | 0) + ")";
+    ctx.fillRect(0, 0, W, H);
+  }
+  function radialBase(col, edgeMul) {
+    var g = ctx.createRadialGradient(CX, CY, 10, CX, CY, MAXR);
+    g.addColorStop(0, "rgb(" + (col[0] | 0) + "," + (col[1] | 0) + "," + (col[2] | 0) + ")");
+    g.addColorStop(1, "rgb(" + (col[0] * edgeMul | 0) + "," + (col[1] * edgeMul | 0) + "," + (col[2] * edgeMul | 0) + ")");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  function edgePulse(rgb, alpha) {
+    var g = ctx.createRadialGradient(CX, CY, 40, CX, CY, MAXR);
+    g.addColorStop(0, "rgba(" + rgb + ",0)");
+    g.addColorStop(0.55, "rgba(" + rgb + "," + (alpha * 0.4).toFixed(3) + ")");
+    g.addColorStop(1, "rgba(" + rgb + "," + alpha.toFixed(3) + ")");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  function overlay(rgba) { ctx.fillStyle = rgba; ctx.fillRect(0, 0, W, H); }
+
+  function closingBlack(prog) {
+    var clearR = MAXR * (1 - prog);
+    var inner = Math.max(0, clearR - 55);
+    var g = ctx.createRadialGradient(CX, CY, inner, CX, CY, clearR + 1);
+    g.addColorStop(0, "rgba(0,0,0,0)");
+    g.addColorStop(1, "rgba(0,0,0,1)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    if (prog >= 1) {                                  // faded out → faint spectating breathing
+      var sp = (Math.sin(Date.now() / 1500) + 1) / 2;
+      fillAll(5 + 9 * sp, 8 + 12 * sp, 14 + 20 * sp);
+    }
+  }
+
+  function healthBar(hp, now) {
+    var x = clamp(num(prop("hbX", 0), 0, 320), 0, 319);
+    var y = clamp(num(prop("hbY", 60), 0, 200), 0, 199);
+    var w = clamp(num(prop("hbW", 320), 1, 320), 1, 320);
+    var hh = clamp(num(prop("hbH", 80), 1, 200), 1, 200);
+    var k = clamp(hp / 100, 0, 1);
+    var col = hexToRgb(prop("hbColor", "#27d645"));
+    if (hp <= 35) { var pp = (Math.sin(now / 170) + 1) / 2; col = [lerp(col[0], 255, pp), lerp(col[1] * (1 - pp), 0, pp), 0]; }
+    var cs = "rgb(" + (col[0] | 0) + "," + (col[1] | 0) + "," + (col[2] | 0) + ")";
+    // faint full-length track so you can see where the bar sits...
+    ctx.fillStyle = "rgba(" + (col[0] | 0) + "," + (col[1] | 0) + "," + (col[2] | 0) + ",0.16)";
+    ctx.fillRect(x, y, w, hh);
+    // ...and the bright fill, which shrinks from full width as HP drops.
+    ctx.fillStyle = cs;
+    ctx.fillRect(x, y, w * k, hh);
+  }
+
+  function render(now, dt) {
+    var p = (Math.sin(now / 600) + 1) / 2;
+
+    if (okCount === 0) { fillAll(110 + 130 * p, 0, 0); return; }       // never reached bridge
+    if (now - lastOk > 2500) { fillAll(210, 70 + 90 * p, 0); return; } // bridge gone
+
+    if (!state || !state.connected) {                                  // idle: no match
+      var bc = lastTeam ? teamCol(lastTeam) : [0, 120, 180];
+      var s = 0.4 + 0.45 * p;
+      radialBase([bc[0] * s, bc[1] * s, bc[2] * s], 0.35);
+      return;
+    }
+
+    lastTeam = state.team || lastTeam;
+    var hp = (state.health == null) ? 100 : num(state.health, 100);
+    var alive = hp > 0 && state.activity !== "menu";
+    var useBar = flag("healthBar");
+
+    // ── base layer ──
+    if (useBar) {
+      fillAll(0, 0, 0);                              // clean black so the bar stands out
+      if (alive) healthBar(hp, now);                 // positionable bar; fill = HP
+    } else if (state.round_phase === "freezetime") {
+      var fz = teamCol(state.team);
+      radialBase([fz[0] * 0.8, fz[1] * 0.8, fz[2] * 0.8], 0.5);
+    } else if (!alive) {
+      var dd = teamCol(state.team);
+      radialBase([dd[0] * 0.25 + 4, dd[1] * 0.25 + 4, dd[2] * 0.25 + 8], 0.4);
+    } else {
+      var k = clamp(hp / 100, 0, 1);
+      radialBase([lerp(220, 30, k), lerp(30, 200, k), 30], 0.45);
+    }
+
+    // ── status tints / pulses ──
+    if (flag("smokeFx") && num(state.smoked, 0) > 0) overlay("rgba(160,160,160,0.62)");
+    if (flag("smokeFx") && num(state.burning, 0) > 0) { var bf = (Math.sin(now / 45) + 1) / 2; overlay("rgba(255," + (70 + 90 * bf | 0) + ",0,0.66)"); }
+    if (alive && hp <= 40 && flag("lowHpPulse") && !useBar) {
+      // Escalating danger: a strong red edge that, below ~15 HP, floods the whole
+      // canvas so a near-death state is impossible to miss.
+      var lo = clamp((1 - hp / 40), 0, 1), beat = (Math.sin(now / 140) + 1) / 2;
+      edgePulse("255,0,0", lo * (0.6 + 0.4 * beat));
+      if (hp <= 15) overlay("rgba(200,0,0," + (0.22 + 0.30 * beat).toFixed(2) + ")");
+    }
+
+    // ── bomb tick (paced like the real C4, not a constant strobe) ──
+    if (state.bomb === "planted" && flag("bombFx")) {
+      // Remaining fuse seconds: prefer the real GSI countdown (extrapolated
+      // smoothly), else estimate from when we first saw the plant.
+      var rem;
+      if (cdBase >= 0) rem = cdBase - (now - cdStamp) / 1000;
+      else if (bombAt >= 0) rem = 40 - (now - bombAt) / 1000;
+      else rem = 40;
+      rem = clamp(rem, 0, 40);
+      // Pulse interval. LEDs run at ~25-30 fps, so every pulse must last several
+      // frames: "Calm" keeps 1 s until 10 s left and speeds up to 0.4 s at most,
+      // "Real C4" mirrors the in-game beep (down to 0.2 s), "Steady" stays at 1 s.
+      var speed = String(prop("bombSpeed", "Calm"));
+      var period;
+      if (speed === "Steady") period = 1.0;
+      else if (speed === "Real C4") period = rem > 10 ? (1.0 - (40 - rem) * 0.004) : (0.20 + 0.68 * (rem / 10));
+      else period = rem > 10 ? 1.0 : (0.40 + 0.60 * (rem / 10));
+      bombPhase += (dt / 1000) / period;
+      var frac = bombPhase - Math.floor(bombPhase);
+      // Smooth pulse over the whole canvas: snaps on, then fades out over ~55% of the period.
+      var env = frac < 0.55 ? Math.pow(1 - frac / 0.55, 1.6) : 0;
+      var danger = 1 - clamp(rem / 40, 0, 1);            // intensity escalates toward 0 s
+      edgePulse("255,0,0", 0.18 + (0.62 + 0.2 * danger) * env);
+      overlay("rgba(255,0,0," + ((0.25 + 0.35 * danger) * env).toFixed(3) + ")");
+    }
+
+    // ── kill / defuse / explosion / win / loss (bold, unmissable) ──
+    // Kill: a hard white pop that snaps in and fades over ~450 ms.
+    if (now < killUntil && flag("killFlash")) { var kv = clamp((killUntil - now) / 450, 0, 1); overlay("rgba(255,255,255," + (0.35 + 0.65 * kv).toFixed(2) + ")"); }
+    // Defuse: full green wash.
+    if (now < defuseUntil && flag("bombFx")) { var dv = clamp((defuseUntil - now) / 900, 0, 1); overlay("rgba(0,235,90," + (0.35 + 0.55 * dv).toFixed(2) + ")"); }
+    // Explosion: a blinding orange blast that decays from near-white.
+    if (now < explodeUntil && flag("bombFx")) { var e = clamp((explodeUntil - now) / 1200, 0, 1); overlay("rgba(255," + (70 + 170 * e | 0) + "," + (60 + 120 * e | 0) + "," + (0.4 + 0.6 * e).toFixed(2) + ")"); }
+    // Win: pulsing green celebration.
+    if (now < winUntil && flag("winFx")) { var wv = clamp((winUntil - now) / 3000, 0, 1), wp = (Math.sin(now / 110) + 1) / 2; overlay("rgba(0," + (150 + 90 * wp | 0) + ",80," + (0.35 + 0.5 * wv).toFixed(2) + ")"); }
+    // Loss: heavy red wash.
+    if (now < lossUntil && flag("winFx")) { var lv = clamp((lossUntil - now) / 3000, 0, 1); overlay("rgba(180,0,0," + (0.3 + 0.5 * lv).toFixed(2) + ")"); }
+
+    // ── death fade to black (then spectating glow) ──
+    if (deathAt >= 0 && flag("deathFx")) closingBlack(clamp((now - deathAt) / 2500, 0, 1));
+
+    // ── flashbang white-out (on top) ──
+    var fl = clamp(num(state.flashed, 0) / 255, 0, 1);
+    if (fl > 0.02 && flag("flashFx")) overlay("rgba(255,255,255," + fl.toFixed(3) + ")");
+  }
+
+  function update() {
+    var now = Date.now();
+    var dt = clamp(now - (lastNow || now), 0, 100); lastNow = now;
+    try {
+      var connected = state && state.connected;
+      var hp = connected && state.health != null ? num(state.health, 100) : 100;
+      var isDead = connected && hp <= 0 && state.activity !== "menu";
+      if (isDead && !wasDead) deathAt = now;
+      if (!isDead) deathAt = -1;
+      wasDead = isDead;
+
+      if (connected && state.bomb === "planted") {
+        if (bombAt < 0) { bombAt = now; bombPhase = 0; }
+        // Re-stamp the fuse clock whenever a fresh countdown value arrives so the
+        // 60fps extrapolation stays locked to CS2's real remaining time.
+        var raw = num(state.bomb_countdown, -1);
+        if (raw >= 0 && raw !== lastCdRaw) { lastCdRaw = raw; cdBase = raw; cdStamp = now; }
+      } else { bombAt = -1; cdBase = -1; lastCdRaw = -1; }
+      if (connected && state.bomb === "exploded" && prevBomb !== "exploded") explodeUntil = now + 1200;
+      if (connected && state.bomb === "defused" && prevBomb !== "defused") defuseUntil = now + 900;
+      prevBomb = connected ? state.bomb : null;
+
+      if (connected && prevKills != null && state.round_kills != null && state.round_kills > prevKills) killUntil = now + 450;
+      prevKills = connected ? state.round_kills : null;
+
+      if (connected && state.round_phase === "over" && prevPhase !== "over" && state.win_team && state.team) {
+        if (state.win_team === state.team) winUntil = now + 3000; else lossUntil = now + 3000;
+      }
+      prevPhase = connected ? state.round_phase : null;
+
+      render(now, dt);
+
+      var br = num(window.brightness, 100) / 100;
+      if (br < 0 || !isFinite(br)) br = 1;
+      if (br < 1) overlay("rgba(0,0,0," + (1 - br).toFixed(3) + ")");
+    } catch (e) {}
+
+    if (now - lastPoll > 200) { lastPoll = now; poll(); }
+    window.requestAnimationFrame(update);
+  }
+
+  // Version to the SignalRGB console (it caches the HTML hard; this confirms the
+  // loaded build). No on-canvas readout.
+  try { console.log("CS2 Reactive " + VER + " loaded"); } catch (e) {}
+  window.requestAnimationFrame(update);
+</script>

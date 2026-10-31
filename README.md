@@ -38,9 +38,10 @@ Die Command Palette lädt Erweiterungen nur aus MSIX-Paketen, und Windows instal
 | **AMP** | CubeCoders-AMP-Game-Server: Start/Stop, Live-Konsole mit Befehlen, Spieler, Backups, Einstellungen, Zeitpläne, Server anlegen | fertig |
 | **Power Plan** | Energiesparplan wechseln, automatisch Höchstleistung beim Spielen (Spielerkennung über Bibliotheken, eigene Liste, Vollbild), Aktivitätsprotokoll, Dock-Element | fertig |
 | **MTR** | Traceroute wie WinMTR mit Statistik und Graphen, Ziele im Hintergrund überwachen (Ausfall, Verlust, Latenz, Routenwechsel) mit Benachrichtigung, HTML-Bericht | fertig |
+| **SignalRGB** | PC-Sensoren live, Beleuchtung und Effekte, Headset-Mute und -Akku, Tastatur-Game-Mode, CS2-Integration, TeamSpeak-Mute mit Einrichtungsassistent, Audioausgabe, Mikrofon im Dock | fertig |
 | **BookStack** | Wiki durchsuchen (mit Typ-Filter), zuletzt geänderte Seiten, Bücher und Regale durchblättern, Seiten als Markdown lesen | fertig |
 
-Weitere folgen: SharePoint, Teams, SSH, LAPS Connect, Defender Schwachstellen, SignalRGB, Paperless-ngx, GPT4Free. *Window Drag* entfällt, das kann PowerToys mit **Alt+Drag** bzw. **FancyZones** selbst.
+Weitere folgen: SharePoint, Teams, SSH, LAPS Connect, Defender Schwachstellen, Paperless-ngx, GPT4Free. *Window Drag* entfällt, das kann PowerToys mit **Alt+Drag** bzw. **FancyZones** selbst.
 
 ## Win-Taste als Launcher-Taste
 

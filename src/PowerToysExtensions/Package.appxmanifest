@@ -6,7 +6,8 @@
   xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
   xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  IgnorableNamespaces="uap uap3 rescap">
+  xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
+  IgnorableNamespaces="uap uap3 rescap desktop6">
 
   <!-- Publisher must match the subject of the signing certificate (scripts\new-certificate.ps1) -->
   <Identity Name="Delido.PowerToysExtensions" Publisher="CN=Delido" Version="0.1.0.0" />
@@ -15,6 +16,9 @@
     <DisplayName>Delido PowerToys Extensions</DisplayName>
     <PublisherDisplayName>Delido</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
+    <!-- Helpers and extensions share files with Raycast and other tools in %APPDATA%: no per-package copies -->
+    <desktop6:FileSystemWriteVirtualization>disabled</desktop6:FileSystemWriteVirtualization>
+    <desktop6:RegistryWriteVirtualization>disabled</desktop6:RegistryWriteVirtualization>
   </Properties>
 
   <Dependencies>
@@ -53,6 +57,7 @@
               <com:Class Id="A8FEC8D3-23D2-4CF0-8D95-2E549EF2F024" DisplayName="AMP" />
               <com:Class Id="8B555E16-BD45-431F-8AFF-8CD8B56BD750" DisplayName="Power Plan" />
               <com:Class Id="B03F6BE3-D6A0-4CDB-960C-61F656A4AC25" DisplayName="MTR" />
+              <com:Class Id="8082F478-79FE-4756-8086-CBC290CF8F26" DisplayName="SignalRGB" />
             </com:ExeServer>
           </com:ComServer>
         </com:Extension>
@@ -168,6 +173,17 @@
             </uap3:Properties>
           </uap3:AppExtension>
         </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette" Id="SignalRgb" PublicFolder="Public"
+            DisplayName="SignalRGB" Description="PC sensors, lighting, headset mute and battery, keyboard game mode, CS2 integration, TeamSpeak mute, audio output">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation><CreateInstance ClassId="8082F478-79FE-4756-8086-CBC290CF8F26" /></Activation>
+                <SupportedInterfaces><Commands /></SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
       </Extensions>
     </Application>
   </Applications>
@@ -176,5 +192,6 @@
     <Capability Name="internetClient" />
     <Capability Name="privateNetworkClientServer" />
     <rescap:Capability Name="runFullTrust" />
+    <rescap:Capability Name="unvirtualizedResources" />
   </Capabilities>
 </Package>
