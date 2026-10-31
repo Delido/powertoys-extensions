@@ -5,6 +5,7 @@ using PowerToysExtensions.Extensions.BookStack;
 using PowerToysExtensions.Extensions.Checkmk;
 using PowerToysExtensions.Extensions.Cs2Nades;
 using PowerToysExtensions.Extensions.Defender;
+using PowerToysExtensions.Extensions.G4f;
 using PowerToysExtensions.Extensions.KeepAwake;
 using PowerToysExtensions.Extensions.LapsConnect;
 using PowerToysExtensions.Extensions.LauncherKey;
@@ -54,6 +55,7 @@ public static class Program
         Register(server, () => new SharePointExtension());
         Register(server, () => new TeamsExtension());
         Register(server, () => new DefenderExtension());
+        Register(server, () => new G4fExtension());
 
         server.Start();
         ExtensionBase.AllDisposed.WaitOne();

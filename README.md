@@ -43,8 +43,12 @@ Die Command Palette lädt Erweiterungen nur aus MSIX-Paketen, und Windows instal
 | **SSH Sessions** | SSH-Hosts finden und verbinden (Windows Terminal), Team-Host-Listen (OneDev, HTTPS, Freigabe), SOCKS-Tunnel mit Browser, SFTP-Dateibrowser über Windows-OpenSSH | fertig |
 | **LAPS Connect** | WireGuard-IP eines Rechners finden, Windows-LAPS-Passwort aus Entra holen (Anmeldung per **Windows-SSO**), per SSH oder RDP verbinden; Passwort in der Zwischenablage ohne Verlauf mit Auto-Löschen; UniFi-Key im Tresor | fertig |
 | **BookStack** | Wiki durchsuchen (mit Typ-Filter), zuletzt geänderte Seiten, Bücher und Regale durchblättern, Seiten als Markdown lesen | fertig |
+| **SharePoint** | Dokumente, Seiten und Sites durchsuchen (KQL, Filter nach Typ), Vorschau, in Office-Desktop-App öffnen; Anmeldung per **Windows-SSO** | fertig |
+| **Microsoft Teams** | Personen mit Status, Chats, Teams & Kanäle, Nachrichten suchen, Nachricht senden, Status und Statusnachricht setzen, Besprechungen, nächstem Meeting beitreten; Anmeldung per **Windows-SSO** | fertig |
+| **Defender Schwachstellen** | Schwachstellen-Report (HTML) aus Microsoft Defender, CVEs, Software und Geräte samt Fundstellen durchsuchen, Top-Maßnahmen nach Gerätegruppe; Client-Secret im Tresor, Demodaten zum Ausprobieren | fertig |
+| **GPT4Free** | Ask AI, AI Chat mit Verlauf, Textbefehle (Zusammenfassen, Übersetzen, Verbessern …), Bildschirm und Webseiten fragen, Bilder erzeugen, eigene AI-Befehle mit Platzhaltern, Presets; mit eigenen APIs (OpenAI, Anthropic, Gemini, OpenRouter, Ollama …) | fertig |
 
-Weitere folgen: SharePoint, Teams, Defender Schwachstellen, GPT4Free. *Window Drag* entfällt, das kann PowerToys mit **Alt+Drag** bzw. **FancyZones** selbst.
+*Window Drag* entfällt, das kann PowerToys mit **Alt+Drag** bzw. **FancyZones** selbst.
 
 ## Win-Taste als Launcher-Taste
 
@@ -55,6 +59,18 @@ Die Command Palette lässt sich in PowerToys nur auf Tastenkombinationen legen (
 Technisch läuft der Tastatur-Hook als eigener kleiner Prozess (`launcher-key.exe`). Er hängt damit nicht an den übrigen Erweiterungen und öffnet die Palette auch, wenn sie gerade neu startet. Win-Loslassen wird nie abgefangen, die Taste kann also nicht „hängen bleiben“.
 
 Nutzt du parallel Raycast mit der Win-Taste, stell dort ein anderes Kürzel ein (z. B. Alt+Space). Die Win-Taste kann immer nur ein Launcher bekommen.
+
+### Microsoft-Anmeldung (SharePoint, Teams, LAPS Connect)
+
+Die Anmeldung läuft über den Windows-Kontomanager: Single Sign-on mit dem an Windows angemeldeten Arbeitskonto, MFA im Windows-Dialog, kein Browser. Die App-Registrierung in Entra braucht dafür unter **Authentifizierung → Mobile und Desktopanwendungen** die Umleitungs-URI
+
+```
+ms-appx-web://microsoft.aad.brokerplugin/<Client-ID>
+```
+
+### GPT4Free
+
+Statt der kostenlosen Fremd-Anbieter (die in meiner Raycast-Kopie ohnehin ausgeblendet sind) nutzt die Erweiterung eigene APIs: **GPT4Free Preferences → Custom APIs → Add API**, Anbieter wählen, Schlüssel eintragen, die Modelle werden automatisch geladen. Schlüssel liegen DPAPI-verschlüsselt im Datenordner. Die Textbefehle starten mit dem Text aus der Zwischenablage, weil die Command Palette markierten Text nicht lesen kann: Text kopieren, Befehl aufrufen, Enter. *Check for Updates* und das Entwickler-Panel entfallen, Updates kommen über das Paket.
 
 ## Hotkeys und Links
 

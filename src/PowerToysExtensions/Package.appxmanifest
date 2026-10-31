@@ -64,6 +64,7 @@
               <com:Class Id="AAAADC85-C95B-4980-AC50-5A59BC1DE2F3" DisplayName="SharePoint" />
               <com:Class Id="611DC4FC-7EA8-44BA-8712-FCB418060C97" DisplayName="Microsoft Teams" />
               <com:Class Id="94557F86-907B-49E8-83BC-5DC511C0199C" DisplayName="Defender Schwachstellen" />
+              <com:Class Id="E8DC0AC9-D09B-463E-8081-EEB3792529D0" DisplayName="GPT4Free" />
             </com:ExeServer>
           </com:ComServer>
         </com:Extension>
@@ -251,6 +252,17 @@
             <uap3:Properties>
               <CmdPalProvider>
                 <Activation><CreateInstance ClassId="94557F86-907B-49E8-83BC-5DC511C0199C" /></Activation>
+                <SupportedInterfaces><Commands /></SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette" Id="G4f" PublicFolder="Public"
+            DisplayName="GPT4Free" Description="Ask AI, chat, text commands and images with your own AI APIs">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation><CreateInstance ClassId="E8DC0AC9-D09B-463E-8081-EEB3792529D0" /></Activation>
                 <SupportedInterfaces><Commands /></SupportedInterfaces>
               </CmdPalProvider>
             </uap3:Properties>
