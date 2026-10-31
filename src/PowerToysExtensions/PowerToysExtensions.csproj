@@ -25,6 +25,8 @@
     <PublishTrimmed>false</PublishTrimmed>
     <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- The SDK winmd is only consumed, not implemented here (same warning as in Microsoft's template) -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);APPX1707</MSBuildWarningsAsMessages>
   </PropertyGroup>
 
   <ItemGroup>
