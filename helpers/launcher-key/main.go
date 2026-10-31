@@ -8,12 +8,15 @@
 //	launcher-key stop                                  end a running instance
 //
 // How the key is handled:
-//   - Win down passes through; at the same moment an unassigned key (0xE8) is pressed and released.
-//     Windows then sees "Win + another key" and does not open the Start menu on release.
-//   - Win up always passes through, so Win can never stay logically pressed.
-//   - A tap (no other key in between, at most -tap ms) opens Command Palette, or closes it when it is
-//     already in front. Win + another key (Win+E, Win+L …) keeps working.
-//   - When an elevated window is in front, Windows drops injected keys (UIPI); Win then behaves normally.
+//   - Win down and Win + another key (Win+E, Win+L …) pass through unchanged.
+//   - A tap (Win alone, at most -tap ms): the real Win-up is held back and, still inside the hook,
+//     "unassigned key 0xE8 down, up, Win up" is sent instead. Windows sees Win + another key and does
+//     not open the Start menu; then Command Palette opens (or closes when it is already in front).
+//     (Sending the mask key right after Win-down does not stop the Start menu on Windows 11.)
+//   - Afterwards the helper checks that Win is really released and sends another Win-up if not, so
+//     the key can never stay logically pressed.
+//   - When an elevated window is in front, Windows drops injected keys (UIPI); the helper then leaves
+//     the key alone and Win opens the Start menu as usual.
 package main
 
 import (
@@ -46,6 +49,7 @@ const (
 	vkMask        = 0xE8 // unassigned
 	inputKeyboard = 1
 	keyeventfUp   = 0x0002
+	keyeventfExt  = 0x0001
 
 	// A key-repeat of a held Win key arrives at least every second; a longer gap means a new press
 	// whose release the hook never saw (e.g. Win+L switched to the lock screen).
@@ -69,6 +73,7 @@ var (
 	procGetForegroundWindow = user32.NewProc("GetForegroundWindow")
 	procGetWindowThreadPid  = user32.NewProc("GetWindowThreadProcessId")
 	procSetTimer            = user32.NewProc("SetTimer")
+	procGetAsyncKeyState    = user32.NewProc("GetAsyncKeyState")
 	procCoCreateInstance    = ole32.NewProc("CoCreateInstance")
 	clsidActivationManager  = windows.GUID{Data1: 0x45BA127D, Data2: 0x10A8, Data3: 0x46EA, Data4: [8]byte{0x8A, 0xB7, 0x56, 0xEA, 0x90, 0x78, 0x94, 0x3C}}
 	iidActivationManager    = windows.GUID{Data1: 0x2e941141, Data2: 0x7f97, Data3: 0x4756, Data4: [8]byte{0xba, 0x1d, 0x9d, 0xec, 0xde, 0x89, 0x4a, 0x3d}}
@@ -76,9 +81,9 @@ var (
 	hook                    uintptr
 	hookThread              uint32
 	tapMs                   uint32 = 400
-	winDown, other, masked  bool
+	winDown, other          bool
 	downTime, lastWinTime   uint32
-	opener                  = make(chan struct{}, 4)
+	opener                  = make(chan uint16, 4)
 	logger                  = log.New(os.Stderr, "", log.LstdFlags)
 )
 
@@ -109,55 +114,72 @@ type msg struct {
 }
 
 func onKey(code int, wParam uintptr, k *kbdLlHook) uintptr {
-	if code >= 0 && k.Flags&llkhfInjected == 0 {
-		handle(k, uint32(wParam))
+	if code >= 0 && k.Flags&llkhfInjected == 0 && handle(k, uint32(wParam)) {
+		return 1 // swallowed
 	}
 	r, _, _ := procCallNextHookEx.Call(0, uintptr(code), wParam, uintptr(unsafe.Pointer(k)))
 	return r
 }
 
-func handle(k *kbdLlHook, message uint32) {
+// handle returns true when the event is swallowed.
+func handle(k *kbdLlHook, message uint32) bool {
 	down := message == wmKeydown || message == wmSyskeydown
 	up := message == wmKeyup || message == wmSyskeyup
 	if k.Vk != vkLwin && k.Vk != vkRwin {
 		if down && winDown {
 			other = true
 		}
-		return
+		return false
 	}
 
 	if down {
 		if !winDown || k.Time-lastWinTime > repeatGap {
-			winDown, other, masked = true, false, false
+			winDown, other = true, false
 			downTime = k.Time
-			if !foregroundElevated() {
-				sendMask()
-				masked = true
-			}
 		}
 		lastWinTime = k.Time
-		return
+		return false
 	}
 
 	if !up || !winDown {
-		return
+		return false
 	}
 	winDown = false
-	if masked && !other && k.Time-downTime <= tapMs {
-		select {
-		case opener <- struct{}{}:
-		default:
-		}
+	if other || k.Time-downTime > tapMs {
+		return false
 	}
-}
+	if foregroundElevated() {
+		logger.Printf("tap left alone: elevated window in front")
+		return false
+	}
 
-// sendMask presses and releases the unassigned key; it is queued behind the Win-down being handled.
-func sendMask() {
-	inputs := [2]keyboardInput{
+	// queued right here in the hook, before anything the user types next
+	inputs := [3]keyboardInput{
 		{Type: inputKeyboard, Vk: vkMask},
 		{Type: inputKeyboard, Vk: vkMask, Flags: keyeventfUp},
+		{Type: inputKeyboard, Vk: uint16(k.Vk), Flags: keyeventfUp | keyeventfExt},
 	}
-	procSendInput.Call(2, uintptr(unsafe.Pointer(&inputs[0])), unsafe.Sizeof(inputs[0]))
+	if sent, _, _ := procSendInput.Call(3, uintptr(unsafe.Pointer(&inputs[0])), unsafe.Sizeof(inputs[0])); sent != 3 {
+		logger.Printf("SendInput sent %d of 3, letting the real Win-up through", sent)
+		return false
+	}
+	select {
+	case opener <- uint16(k.Vk):
+	default:
+	}
+	return true
+}
+
+// ensureReleased sends another Win-up should Windows still see Win as pressed after a tap
+// (an injected key can be dropped, e.g. when an elevated window comes to the front meanwhile).
+func ensureReleased(vk uint16) {
+	time.Sleep(60 * time.Millisecond)
+	if state, _, _ := procGetAsyncKeyState.Call(uintptr(vk)); state&0x8000 == 0 {
+		return
+	}
+	logger.Printf("Win still pressed after a tap, releasing it")
+	inputs := [1]keyboardInput{{Type: inputKeyboard, Vk: vk, Flags: keyeventfUp | keyeventfExt}}
+	procSendInput.Call(1, uintptr(unsafe.Pointer(&inputs[0])), unsafe.Sizeof(inputs[0]))
 }
 
 func foregroundPid() uint32 {
@@ -221,7 +243,8 @@ func runOpener() {
 	runtime.LockOSThread()
 	windows.CoInitializeEx(0, windows.COINIT_MULTITHREADED)
 	appID, _ := windows.UTF16PtrFromString(paletteAppID)
-	for range opener {
+	for vk := range opener {
+		ensureReleased(vk)
 		// Like Raycast, a second tap closes the palette: it toggles on its own root hotkey (index 0).
 		if w, ok := paletteInForeground(); ok {
 			procPostMessageW.Call(w, wmHotkey, 0, 0)
