@@ -1,12 +1,11 @@
 using System.Runtime.InteropServices;
-using System.Text.Json;
 using PowerToysExtensions.Core;
 
 namespace PowerToysExtensions.Extensions.LauncherKey;
 
 /// <summary>
-/// Low-level keyboard hook that turns a short tap of the Windows key (no other key in between) into the
-/// Command Palette hotkey. Win + another key and a long press keep their normal meaning.
+/// Low-level keyboard hook that turns a short tap of the Windows key (no other key in between) into
+/// opening Command Palette. Win + another key and a long press keep their normal meaning.
 /// </summary>
 internal static partial class WinKeyHook
 {
@@ -19,9 +18,6 @@ internal static partial class WinKeyHook
     private const uint LlkhfInjected = 0x10;
     private const ushort VkLwin = 0x5B;
     private const ushort VkRwin = 0x5C;
-    private const ushort VkMenu = 0x12;
-    private const ushort VkControl = 0x11;
-    private const ushort VkShift = 0x10;
 
     // Unassigned virtual key: pressing it while Win is down stops the Start menu from opening
     private const ushort VkUnassigned = 0xE8;
@@ -119,11 +115,6 @@ internal static partial class WinKeyHook
                 _winDown = true;
                 _otherKey = false;
                 _downTime = key.Time;
-
-                // Mask the press right away: the unassigned key is queued behind this Win-down, so Windows
-                // sees "Win + another key" and never opens the Start menu on release. Nothing is swallowed,
-                // the real Win-up still reaches Windows and every other hook (no stuck Win key).
-                Native.SendKeys(VkUnassigned);
             }
 
             return false;
@@ -135,74 +126,63 @@ internal static partial class WinKeyHook
         }
 
         _winDown = false;
-        if (!_otherKey && unchecked(key.Time - _downTime) <= MaxTapMs)
+        if (_otherKey || unchecked(key.Time - _downTime) > MaxTapMs)
         {
-            // Opened after the real Win-up has been processed; one SendInput batch cannot be interleaved
-            // with what the user types next
-            Opener.Add(PaletteHotkey);
+            return false;
         }
 
+        // A tap of Win alone: press the unassigned key now, inside the hook, so it is processed before this
+        // Win-up and Windows does not open the Start menu (the same trick AutoHotkey uses). The Win-up itself
+        // goes through untouched, so no hook or app ever sees a stuck Win key.
+        Native.SendKeys(VkUnassigned);
+        Opener.Add(true);
         return false;
     }
 
-    // Single worker so hotkey presses never overlap or wait for the thread pool
-    private static readonly System.Collections.Concurrent.BlockingCollection<Func<ushort[]>> Opener = StartOpener();
+    // Activating Command Palette like a second launch makes it summon its window – no synthetic hotkey,
+    // so nothing is typed on the user's behalf. A single worker keeps it off the hook thread.
+    private static readonly System.Collections.Concurrent.BlockingCollection<bool> Opener = StartOpener();
 
-    private static System.Collections.Concurrent.BlockingCollection<Func<ushort[]>> StartOpener()
+    private static System.Collections.Concurrent.BlockingCollection<bool> StartOpener()
     {
-        var queue = new System.Collections.Concurrent.BlockingCollection<Func<ushort[]>>();
+        var queue = new System.Collections.Concurrent.BlockingCollection<bool>();
         new Thread(() =>
         {
-            foreach (var keys in queue.GetConsumingEnumerable())
+            foreach (var request in queue.GetConsumingEnumerable())
             {
-                Native.SendKeys(keys());
+                try
+                {
+                    var manager = (IApplicationActivationManager)new ApplicationActivationManager();
+                    manager.ActivateApplication(PaletteAppId, null, 0, out _);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("launcher key: activating Command Palette failed", ex);
+                }
             }
         })
         { IsBackground = true, Name = "LauncherKeyOpener" }.Start();
         return queue;
     }
 
-    /// <summary>The activation hotkey configured in Command Palette (default Win+Alt+Space).</summary>
-    internal static ushort[] PaletteHotkey()
+    private const string PaletteAppId = "Microsoft.CommandPalette_8wekyb3d8bbwe!App";
+
+    [ComImport]
+    [Guid("2e941141-7f97-4756-ba1d-9decde894a3d")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IApplicationActivationManager
     {
-        try
-        {
-            var file = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Packages",
-                "Microsoft.CommandPalette_8wekyb3d8bbwe",
-                "LocalState",
-                "settings.json");
-            using var json = JsonDocument.Parse(File.ReadAllText(file));
-            var hotkey = json.RootElement.GetProperty("Hotkey");
-            var keys = new List<ushort>();
-            if (hotkey.GetProperty("win").GetBoolean())
-            {
-                keys.Add(VkLwin);
-            }
+        int ActivateApplication([MarshalAs(UnmanagedType.LPWStr)] string appUserModelId, [MarshalAs(UnmanagedType.LPWStr)] string? arguments, int options, out uint processId);
 
-            if (hotkey.GetProperty("ctrl").GetBoolean())
-            {
-                keys.Add(VkControl);
-            }
+        int ActivateForFile([MarshalAs(UnmanagedType.LPWStr)] string appUserModelId, nint itemArray, [MarshalAs(UnmanagedType.LPWStr)] string verb, out uint processId);
 
-            if (hotkey.GetProperty("alt").GetBoolean())
-            {
-                keys.Add(VkMenu);
-            }
+        int ActivateForProtocol([MarshalAs(UnmanagedType.LPWStr)] string appUserModelId, nint itemArray, out uint processId);
+    }
 
-            if (hotkey.GetProperty("shift").GetBoolean())
-            {
-                keys.Add(VkShift);
-            }
-
-            keys.Add((ushort)hotkey.GetProperty("code").GetInt32());
-            return [.. keys];
-        }
-        catch (Exception ex) when (ex is IOException or JsonException or KeyNotFoundException or InvalidOperationException)
-        {
-            return [VkLwin, VkMenu, 0x20];
-        }
+    [ComImport]
+    [Guid("45BA127D-10A8-46EA-8AB7-56EA9078943C")]
+    private class ApplicationActivationManager
+    {
     }
 
     [StructLayout(LayoutKind.Sequential)]
