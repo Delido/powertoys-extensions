@@ -1,0 +1,8 @@
+bin/
+obj/
+artifacts/
+.vs/
+*.user
+*.pfx
+src/PowerToysExtensions/Helpers/*.exe
+src/PowerToysExtensions/Helpers/*.exe~

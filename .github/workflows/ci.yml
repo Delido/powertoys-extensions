@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: false
+
+      - name: Build helpers
+        shell: pwsh
+        run: ./scripts/build-helpers.ps1
+
+      - name: Build
+        run: dotnet build src/PowerToysExtensions/PowerToysExtensions.csproj -c Release -p:Platform=x64 -warnaserror --nologo
+
+      - name: Vet helpers
+        shell: pwsh
+        run: |
+          Get-ChildItem helpers -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+            Push-Location $_.FullName; go vet ./...; if ($LASTEXITCODE) { exit 1 }; Pop-Location
+          }

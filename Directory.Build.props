@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>$(Platform)</PlatformTarget>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>preview</LangVersion>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <NuGetAuditMode>direct</NuGetAuditMode>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap3 rescap">
+
+  <!-- Publisher must match the subject of the signing certificate (scripts\new-certificate.ps1) -->
+  <Identity Name="Delido.PowerToysExtensions" Publisher="CN=Delido" Version="0.1.0.0" />
+
+  <Properties>
+    <DisplayName>Delido PowerToys Extensions</DisplayName>
+    <PublisherDisplayName>Delido</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.19041.0" MaxVersionTested="10.0.19041.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="x-generate" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="$targetentrypoint$">
+      <uap:VisualElements
+        DisplayName="Delido PowerToys Extensions"
+        Description="Command Palette extensions by Delido"
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png"
+        AppListEntry="none">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+        <uap:SplashScreen Image="Assets\SplashScreen.png" />
+      </uap:VisualElements>
+      <Extensions>
+        <!-- One COM class per extension; every class is served by the same process -->
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:ExeServer Executable="PowerToysExtensions.exe" Arguments="-RegisterProcessAsComServer" DisplayName="Delido PowerToys Extensions">
+              <com:Class Id="AED9D9F3-C822-4EC2-9C30-B632C5293A98" DisplayName="Keep Awake" />
+              <com:Class Id="C8E879D1-D35B-4FB7-93DC-269705348DB5" DisplayName="Launcher Key" />
+            </com:ExeServer>
+          </com:ComServer>
+        </com:Extension>
+
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette" Id="KeepAwake" PublicFolder="Public"
+            DisplayName="Keep Awake" Description="Keep the computer awake, optionally keep the Teams status available">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation><CreateInstance ClassId="AED9D9F3-C822-4EC2-9C30-B632C5293A98" /></Activation>
+                <SupportedInterfaces><Commands /></SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette" Id="LauncherKey" PublicFolder="Public"
+            DisplayName="Launcher Key" Description="Open Command Palette by tapping the Windows key">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation><CreateInstance ClassId="C8E879D1-D35B-4FB7-93DC-269705348DB5" /></Activation>
+                <SupportedInterfaces><Commands /></SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <Capability Name="privateNetworkClientServer" />
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
