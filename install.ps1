@@ -49,6 +49,13 @@ if (-not $trusted) {
 Write-Host 'Installing the package ...'
 Add-AppxPackage -Path $msix -ForceApplicationShutdown -ForceUpdateFromAnyVersion
 
-# Ask Command Palette to load the new extensions (it asks for consent the first time)
-Start-Process 'x-cmdpal://reload' -ErrorAction SilentlyContinue
+# Restart Command Palette: on a package install event it only registers the first extension of a
+# package, a full start finds all of them
+$running = Get-Process Microsoft.CmdPal.UI -ErrorAction SilentlyContinue
+if ($running) {
+    Write-Host 'Restarting Command Palette ...'
+    $running | Stop-Process -Force
+    Start-Sleep -Seconds 2
+}
+Start-Process 'x-cmdpal://background' -ErrorAction SilentlyContinue
 Write-Host 'Done. Open Command Palette – the extensions appear under Settings > Extensions.'
