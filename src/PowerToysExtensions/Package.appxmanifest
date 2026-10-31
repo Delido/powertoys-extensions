@@ -48,6 +48,7 @@
               <com:Class Id="9F581994-065F-44D0-B6F1-A2E5F3DBFB53" DisplayName="BookStack" />
               <com:Class Id="9AEC9729-A270-40D2-BA86-780721AA64AD" DisplayName="OneDev" />
               <com:Class Id="EF36641F-2607-41D0-82D9-1DD1169D0D8C" DisplayName="Checkmk" />
+              <com:Class Id="874E31EE-457E-4C41-93E1-0FF6B4A3ED1B" DisplayName="Snipe-IT" />
             </com:ExeServer>
           </com:ComServer>
         </com:Extension>
@@ -103,6 +104,17 @@
             <uap3:Properties>
               <CmdPalProvider>
                 <Activation><CreateInstance ClassId="EF36641F-2607-41D0-82D9-1DD1169D0D8C" /></Activation>
+                <SupportedInterfaces><Commands /></SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette" Id="SnipeIt" PublicFolder="Public"
+            DisplayName="Snipe-IT" Description="Assets, users, licenses and stock, check-in and check-out, audits">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation><CreateInstance ClassId="874E31EE-457E-4C41-93E1-0FF6B4A3ED1B" /></Activation>
                 <SupportedInterfaces><Commands /></SupportedInterfaces>
               </CmdPalProvider>
             </uap3:Properties>
