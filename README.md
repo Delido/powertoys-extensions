@@ -39,9 +39,10 @@ Die Command Palette lädt Erweiterungen nur aus MSIX-Paketen, und Windows instal
 | **Power Plan** | Energiesparplan wechseln, automatisch Höchstleistung beim Spielen (Spielerkennung über Bibliotheken, eigene Liste, Vollbild), Aktivitätsprotokoll, Dock-Element | fertig |
 | **MTR** | Traceroute wie WinMTR mit Statistik und Graphen, Ziele im Hintergrund überwachen (Ausfall, Verlust, Latenz, Routenwechsel) mit Benachrichtigung, HTML-Bericht | fertig |
 | **SignalRGB** | PC-Sensoren live, Beleuchtung und Effekte, Headset-Mute und -Akku, Tastatur-Game-Mode, CS2-Integration, TeamSpeak-Mute mit Einrichtungsassistent, Audioausgabe, Mikrofon im Dock | fertig |
+| **Paperless-ngx** | Dokumente suchen (Volltext, Filter, ähnliche), Posteingang, bearbeiten, herunterladen und hochladen; Token verschlüsselt, Entsperren per **Passwort oder Windows Hello** | fertig |
 | **BookStack** | Wiki durchsuchen (mit Typ-Filter), zuletzt geänderte Seiten, Bücher und Regale durchblättern, Seiten als Markdown lesen | fertig |
 
-Weitere folgen: SharePoint, Teams, SSH, LAPS Connect, Defender Schwachstellen, Paperless-ngx, GPT4Free. *Window Drag* entfällt, das kann PowerToys mit **Alt+Drag** bzw. **FancyZones** selbst.
+Weitere folgen: SharePoint, Teams, SSH, LAPS Connect, Defender Schwachstellen, GPT4Free. *Window Drag* entfällt, das kann PowerToys mit **Alt+Drag** bzw. **FancyZones** selbst.
 
 ## Win-Taste als Launcher-Taste
 
@@ -58,7 +59,8 @@ Nutzt du parallel Raycast mit der Win-Taste, stell dort ein anderes Kürzel ein 
 
 ## Sicherheit
 
-- Zugangsdaten werden nie im Code oder Repo gespeichert, nur lokal im Datenordner des Pakets bzw. verschlüsselt (Windows DPAPI).
+- Zugangsdaten werden nie im Code oder Repo gespeichert, nur lokal im Datenordner des Pakets, verschlüsselt mit Windows DPAPI.
+- **Paperless-ngx**, **LAPS Connect** und **Defender** legen ihr Geheimnis zusätzlich in einem Tresor ab: verschlüsselt mit einem eigenen Passwort (PBKDF2, AES-256-GCM) und optional mit **Windows Hello** (der Schlüssel wird aus einer Hello-Signatur abgeleitet, ohne Hello oder Passwort lässt er sich nicht öffnen). Entsperrt liegt es nur im Arbeitsspeicher und sperrt sich nach der eingestellten Zeit selbst.
 - Die Hilfsprogramme lauschen nur auf `127.0.0.1`.
 
 ## Entwicklung

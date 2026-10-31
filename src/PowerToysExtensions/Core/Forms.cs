@@ -49,7 +49,8 @@ public sealed class FormBuilder
         return this;
     }
 
-    public FormBuilder Choice(string id, string label, IEnumerable<(string Title, string Value)> choices, string value = "", bool expanded = false)
+    /// <summary>Dropdown; with multi, several values can be picked (submitted comma-separated).</summary>
+    public FormBuilder Choice(string id, string label, IEnumerable<(string Title, string Value)> choices, string value = "", bool expanded = false, bool multi = false)
     {
         _body.Add(new Dictionary<string, object>
         {
@@ -57,7 +58,8 @@ public sealed class FormBuilder
             ["id"] = id,
             ["label"] = label,
             ["value"] = value,
-            ["style"] = expanded ? "expanded" : "compact",
+            ["style"] = expanded ? "expanded" : multi ? "filtered" : "compact",
+            ["isMultiSelect"] = multi,
             ["choices"] = choices.Select(c => new Dictionary<string, string> { ["title"] = c.Title, ["value"] = c.Value }).ToArray(),
         });
         return this;

@@ -8,6 +8,7 @@ using PowerToysExtensions.Extensions.KeepAwake;
 using PowerToysExtensions.Extensions.LauncherKey;
 using PowerToysExtensions.Extensions.Mtr;
 using PowerToysExtensions.Extensions.OneDev;
+using PowerToysExtensions.Extensions.Paperless;
 using PowerToysExtensions.Extensions.PowerPlan;
 using PowerToysExtensions.Extensions.SignalRgb;
 using PowerToysExtensions.Extensions.SnipeIt;
@@ -42,6 +43,7 @@ public static class Program
         Register(server, () => new PowerPlanExtension());
         Register(server, () => new MtrExtension());
         Register(server, () => new SignalRgbExtension());
+        Register(server, () => new PaperlessExtension());
 
         server.Start();
         ExtensionBase.AllDisposed.WaitOne();
