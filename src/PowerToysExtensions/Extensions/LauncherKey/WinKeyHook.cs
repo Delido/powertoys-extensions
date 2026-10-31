@@ -162,6 +162,14 @@ internal static partial class WinKeyHook
             {
                 try
                 {
+                    // Like Raycast, a second tap closes the palette. Command Palette toggles on its own
+                    // root hotkey (index 0), so it gets that message instead of a typed hotkey.
+                    if (PaletteInForeground() is { } palette)
+                    {
+                        PostMessageW(palette, WmHotkey, 0, 0);
+                        continue;
+                    }
+
                     var manager = (IApplicationActivationManager)new ApplicationActivationManager();
                     manager.ActivateApplication(PaletteAppId, null, 0, out _);
                 }
@@ -176,6 +184,36 @@ internal static partial class WinKeyHook
     }
 
     private const string PaletteAppId = "Microsoft.CommandPalette_8wekyb3d8bbwe!App";
+    private const uint WmHotkey = 0x0312;
+
+    private static nint? PaletteInForeground()
+    {
+        var window = GetForegroundWindow();
+        if (window == 0 || GetWindowThreadProcessId(window, out var pid) == 0)
+        {
+            return null;
+        }
+
+        try
+        {
+            using var process = System.Diagnostics.Process.GetProcessById((int)pid);
+            return process.ProcessName.Equals("Microsoft.CmdPal.UI", StringComparison.OrdinalIgnoreCase) ? window : null;
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+    }
+
+    [LibraryImport("user32.dll")]
+    private static partial nint GetForegroundWindow();
+
+    [LibraryImport("user32.dll")]
+    private static partial uint GetWindowThreadProcessId(nint window, out uint processId);
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool PostMessageW(nint window, uint message, nint wParam, nint lParam);
 
     [ComImport]
     [Guid("2e941141-7f97-4756-ba1d-9decde894a3d")]
