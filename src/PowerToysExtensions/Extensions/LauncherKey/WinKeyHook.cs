@@ -131,13 +131,23 @@ internal static partial class WinKeyHook
             return false;
         }
 
-        // A tap of Win alone: press the unassigned key now, inside the hook, so it is processed before this
-        // Win-up and Windows does not open the Start menu (the same trick AutoHotkey uses). The Win-up itself
-        // goes through untouched, so no hook or app ever sees a stuck Win key.
-        Native.SendKeys(VkUnassigned);
+        // A tap of Win alone: swallow this Win-up and queue, right here in the hook, one batch of
+        // "unassigned key down, up, Win up". Windows then sees Win + another key (no Start menu), and the
+        // batch is queued before anything the user types next, so Win can never stay logically pressed.
+        Native.SendInput(3, [Key(VkUnassigned, false), Key(VkUnassigned, true), Key((ushort)key.Vk, true)], Marshal.SizeOf<Native.Input>());
         Opener.Add(true);
-        return false;
+        return true;
     }
+
+    private static Native.Input Key(ushort vk, bool up) => new()
+    {
+        Type = Native.InputKeyboard,
+        Keyboard = new Native.KeyboardInput
+        {
+            Vk = vk,
+            Flags = (up ? Native.KeyeventfKeyup : 0) | (vk is VkLwin or VkRwin ? Native.KeyeventfExtendedkey : 0),
+        },
+    };
 
     // Activating Command Palette like a second launch makes it summon its window – no synthetic hotkey,
     // so nothing is typed on the user's behalf. A single worker keeps it off the hook thread.
