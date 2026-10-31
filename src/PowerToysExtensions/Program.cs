@@ -1,5 +1,6 @@
 using Microsoft.CommandPalette.Extensions;
 using PowerToysExtensions.Core;
+using PowerToysExtensions.Extensions.BookStack;
 using PowerToysExtensions.Extensions.KeepAwake;
 using PowerToysExtensions.Extensions.LauncherKey;
 using Shmuelie.WinRTServer.CsWinRT;
@@ -24,6 +25,7 @@ public static class Program
         // Command Palette asks for each one separately; the process lives until all are disposed.
         Register(server, () => new KeepAwakeExtension());
         Register(server, () => new LauncherKeyExtension());
+        Register(server, () => new BookStackExtension());
 
         server.Start();
         ExtensionBase.AllDisposed.WaitOne();

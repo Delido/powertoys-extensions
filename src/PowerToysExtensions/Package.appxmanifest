@@ -45,6 +45,7 @@
             <com:ExeServer Executable="PowerToysExtensions.exe" Arguments="-RegisterProcessAsComServer" DisplayName="Delido PowerToys Extensions">
               <com:Class Id="AED9D9F3-C822-4EC2-9C30-B632C5293A98" DisplayName="Keep Awake" />
               <com:Class Id="C8E879D1-D35B-4FB7-93DC-269705348DB5" DisplayName="Launcher Key" />
+              <com:Class Id="9F581994-065F-44D0-B6F1-A2E5F3DBFB53" DisplayName="BookStack" />
             </com:ExeServer>
           </com:ComServer>
         </com:Extension>
@@ -67,6 +68,17 @@
             <uap3:Properties>
               <CmdPalProvider>
                 <Activation><CreateInstance ClassId="C8E879D1-D35B-4FB7-93DC-269705348DB5" /></Activation>
+                <SupportedInterfaces><Commands /></SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette" Id="BookStack" PublicFolder="Public"
+            DisplayName="BookStack" Description="Search the wiki, read books and pages">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation><CreateInstance ClassId="9F581994-065F-44D0-B6F1-A2E5F3DBFB53" /></Activation>
                 <SupportedInterfaces><Commands /></SupportedInterfaces>
               </CmdPalProvider>
             </uap3:Properties>

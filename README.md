@@ -31,8 +31,9 @@ Die Command Palette lädt Erweiterungen nur aus MSIX-Paketen, und Windows instal
 |---|---|---|
 | **Keep Awake** | Rechner wach halten, optional Teams-Status auf Verfügbar, Umschalter im Dock | fertig |
 | **Launcher Key** | Command Palette mit kurzem Antippen der **Win-Taste** öffnen | fertig |
+| **BookStack** | Wiki durchsuchen (mit Typ-Filter), zuletzt geänderte Seiten, Bücher und Regale durchblättern, Seiten als Markdown lesen | fertig |
 
-Weitere folgen: OneDev, BookStack, Checkmk, SharePoint, Teams, Snipe-IT, SSH, LAPS Connect, Defender Schwachstellen, SignalRGB, CS2 Nades, Power Plan, AMP, MTR, Paperless-ngx, GPT4Free. *Window Drag* entfällt, das kann PowerToys mit **Alt+Drag** bzw. **FancyZones** selbst.
+Weitere folgen: OneDev, Checkmk, SharePoint, Teams, Snipe-IT, SSH, LAPS Connect, Defender Schwachstellen, SignalRGB, CS2 Nades, Power Plan, AMP, MTR, Paperless-ngx, GPT4Free. *Window Drag* entfällt, das kann PowerToys mit **Alt+Drag** bzw. **FancyZones** selbst.
 
 ## Win-Taste als Launcher-Taste
 
