@@ -248,7 +248,7 @@ func runOpener() {
 	windows.CoInitializeEx(0, windows.COINIT_MULTITHREADED)
 	appID, _ := windows.UTF16PtrFromString(paletteAppID)
 	for vk := range opener {
-		ensureReleased(vk)
+		go ensureReleased(vk) // checked alongside, so opening the palette is not delayed
 		// Like Raycast, a second tap closes the palette: it toggles on its own root hotkey (index 0).
 		if w, ok := paletteInForeground(); ok {
 			procPostMessageW.Call(w, wmHotkey, 0, 0)
