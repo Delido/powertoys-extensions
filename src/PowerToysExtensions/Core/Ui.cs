@@ -58,6 +58,19 @@ public static class Ui
             RequestedShortcut = shortcut ?? default,
         };
 
+    /// <summary>An action that asks first (Raycast's confirmAlert); critical paints it red.</summary>
+    public static CommandContextItem Confirm(string title, string glyph, string question, string description, Action action, bool critical = false, KeyChord? shortcut = null)
+    {
+        var run = new AnonymousCommand(action) { Name = title, Result = CommandResult.KeepOpen() };
+        var ask = new AnonymousCommand(() => { })
+        {
+            Name = title,
+            Icon = Glyph(glyph),
+            Result = CommandResult.Confirm(new ConfirmationArgs { Title = question, Description = description, PrimaryCommand = run, IsPrimaryCommandCritical = critical }),
+        };
+        return new CommandContextItem(ask) { Title = title, IsCritical = critical, RequestedShortcut = shortcut ?? default };
+    }
+
     /// <summary>Opens the settings page of a provider in Command Palette.</summary>
     public static OpenUrlCommand OpenSettings(string providerId) =>
         new($"x-cmdpal://settings/extension/{Uri.EscapeDataString(providerId)}") { Name = "Open Settings", Icon = Glyph(""), Result = CommandResult.Dismiss() };

@@ -50,6 +50,7 @@
               <com:Class Id="EF36641F-2607-41D0-82D9-1DD1169D0D8C" DisplayName="Checkmk" />
               <com:Class Id="874E31EE-457E-4C41-93E1-0FF6B4A3ED1B" DisplayName="Snipe-IT" />
               <com:Class Id="E1E42D05-6701-4E8B-9D0D-CA638E908459" DisplayName="CS2 Nades" />
+              <com:Class Id="A8FEC8D3-23D2-4CF0-8D95-2E549EF2F024" DisplayName="AMP" />
             </com:ExeServer>
           </com:ComServer>
         </com:Extension>
@@ -127,6 +128,17 @@
             <uap3:Properties>
               <CmdPalProvider>
                 <Activation><CreateInstance ClassId="E1E42D05-6701-4E8B-9D0D-CA638E908459" /></Activation>
+                <SupportedInterfaces><Commands /></SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette" Id="Amp" PublicFolder="Public"
+            DisplayName="AMP" Description="Control CubeCoders AMP game servers: start/stop, console, players, backups, settings, new servers">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation><CreateInstance ClassId="A8FEC8D3-23D2-4CF0-8D95-2E549EF2F024" /></Activation>
                 <SupportedInterfaces><Commands /></SupportedInterfaces>
               </CmdPalProvider>
             </uap3:Properties>

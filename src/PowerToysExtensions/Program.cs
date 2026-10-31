@@ -1,5 +1,6 @@
 using Microsoft.CommandPalette.Extensions;
 using PowerToysExtensions.Core;
+using PowerToysExtensions.Extensions.Amp;
 using PowerToysExtensions.Extensions.BookStack;
 using PowerToysExtensions.Extensions.Checkmk;
 using PowerToysExtensions.Extensions.Cs2Nades;
@@ -34,6 +35,7 @@ public static class Program
         Register(server, () => new CheckmkExtension());
         Register(server, () => new SnipeItExtension());
         Register(server, () => new Cs2NadesExtension());
+        Register(server, () => new AmpExtension());
 
         server.Start();
         ExtensionBase.AllDisposed.WaitOne();

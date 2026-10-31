@@ -16,10 +16,14 @@ public abstract partial class AsyncListPage : ListPage
     private CancellationTokenSource? _cts;
     private int _page;
     private bool _started;
+    private DateTime _loadedAt;
+
+    /// <summary>When set, opening the page again after this time loads fresh data (live status lists).</summary>
+    protected TimeSpan? MaxAge { get; set; }
 
     public override IListItem[] GetItems()
     {
-        if (!_started)
+        if (!_started || (MaxAge is { } age && !IsLoading && DateTime.UtcNow - _loadedAt > age))
         {
             Reload();
         }
@@ -81,6 +85,7 @@ public abstract partial class AsyncListPage : ListPage
 
             HasMoreItems = batch.HasMore;
             EmptyContent = Empty();
+            _loadedAt = DateTime.UtcNow;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -92,6 +97,7 @@ public abstract partial class AsyncListPage : ListPage
 
             HasMoreItems = false;
             EmptyContent = Ui.ErrorItem(ex, Reload);
+            _loadedAt = DateTime.UtcNow;
         }
         catch (OperationCanceledException)
         {
@@ -246,6 +252,9 @@ public abstract partial class AsyncMarkdownPage : ContentPage
     }
 
     protected abstract Task<(string Markdown, IDetails? Details, IContextItem[] Commands)> Load(CancellationToken token);
+
+    /// <summary>Loads and renders the page again (e.g. after toggling a view option).</summary>
+    protected void Refresh() => _ = Run();
 
     private async Task Run()
     {
