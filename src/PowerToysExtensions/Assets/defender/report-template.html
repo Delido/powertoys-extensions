@@ -390,11 +390,13 @@ const newTag = f => isNew(f) ? `<span class="newtag">NEU</span>` : "";
 const FILTER_DEFAULT = { group: "", tag: "", os: "", sev: "", exp: "", age: "", q: "" };
 const state = Object.assign({ tab: "overview" }, FILTER_DEFAULT);
 const uniq = arr => [...new Set(arr)].sort((a, b) => a.localeCompare(b, "de"));
-function fillSelect(id, values, allLabel) {
-  document.getElementById(id).innerHTML = `<option value="">${allLabel}</option>` + values.map(v => `<option>${esc(v)}</option>`).join("");
+function fillSelect(id, values, allLabel, exclude) {
+  // "!wert" = alles außer diesem Wert, z. B. "Alle Gruppen außer Private Geräte"
+  document.getElementById(id).innerHTML = `<option value="">${allLabel}</option>` + values.map(v => `<option>${esc(v)}</option>`).join("") +
+    (exclude && values.length > 1 ? `<optgroup label="${exclude}">` + values.map(v => `<option value="!${esc(v)}">außer ${esc(v)}</option>`).join("") + `</optgroup>` : "");
 }
-fillSelect("f-group", uniq(D.devices.map(d => d.g)), "Alle Gruppen");
-fillSelect("f-tag", uniq(D.devices.flatMap(d => d.t || [])), "Alle Tags");
+fillSelect("f-group", uniq(D.devices.map(d => d.g)), "Alle Gruppen", "Alle Gruppen außer …");
+fillSelect("f-tag", uniq(D.devices.flatMap(d => d.t || [])), "Alle Tags", "Alle Geräte außer Tag …");
 fillSelect("f-os", uniq(D.devices.map(d => d.os)), "Alle Systeme");
 if (!D.devices.some(d => (d.t || []).length)) document.getElementById("f-tag").style.display = "none";
 document.getElementById("f-age").innerHTML = `<option value="">Neu &amp; alt</option>` +
@@ -409,15 +411,30 @@ function syncControls() {
     el.classList.toggle("on", !!state[k] && el.tagName === "SELECT");
   }
 }
+// Gruppe/Tag erfüllt den Filter ("" = alle, "x" = genau x, "!x" = alles außer x)
+const groupOk = g => !state.group || (state.group[0] === "!" ? g !== state.group.slice(1) : g === state.group);
+const tagOk = t => !state.tag || (state.tag[0] === "!" ? !(t || []).includes(state.tag.slice(1)) : (t || []).includes(state.tag));
+// Gruppen- und Tag-Filter bleiben beim nächsten Öffnen erhalten (z. B. "außer Private Geräte")
+const STORED_FILTERS = ["group", "tag"];
+function saveFilters() {
+  try { localStorage.setItem("defender-report-filters", JSON.stringify(Object.fromEntries(STORED_FILTERS.map(k => [k, state[k]])))); } catch (_) {}
+}
+try {
+  const saved = JSON.parse(localStorage.getItem("defender-report-filters") || "{}");
+  for (const k of STORED_FILTERS) {
+    const el = document.getElementById(FILTER_IDS[k]);
+    if (saved[k] && [...el.options].some(o => o.value === saved[k])) state[k] = saved[k];
+  }
+} catch (_) {}
 for (const k of ["group", "tag", "os", "sev", "exp", "age"]) {
-  document.getElementById(FILTER_IDS[k]).addEventListener("change", e => { state[k] = e.target.value; syncControls(); update(); });
+  document.getElementById(FILTER_IDS[k]).addEventListener("change", e => { state[k] = e.target.value; syncControls(); saveFilters(); update(); });
 }
 let qTimer;
 document.getElementById("f-q").addEventListener("input", e => {
   clearTimeout(qTimer);
   qTimer = setTimeout(() => { state.q = e.target.value.trim(); update(); }, 200);
 });
-document.getElementById("f-reset").addEventListener("click", () => { Object.assign(state, FILTER_DEFAULT); syncControls(); update(); });
+document.getElementById("f-reset").addEventListener("click", () => { Object.assign(state, FILTER_DEFAULT); syncControls(); saveFilters(); update(); });
 function setFilters(patch, tab) {
   Object.assign(state, patch);
   syncControls();
@@ -434,9 +451,9 @@ function filterFindings() {
   const out = [];
   for (const f of D.f) {
     const d = D.devices[f[0]], c = D.cves[f[2]];
-    if (group && d.g !== group) continue;
+    if (group && !groupOk(d.g)) continue;
     if (os && d.os !== os) continue;
-    if (tag && !(d.t || []).includes(tag)) continue;
+    if (tag && !tagOk(d.t)) continue;
     if (sev && (sevOp === "ge" ? c.s < sevV : c.s !== sevV)) continue;
     if (exp && (expOp === "any" ? c.e === 0 : c.e !== expV)) continue;
     if (age) {
@@ -727,8 +744,9 @@ function renderOverview(a, rows) {
 }
 
 function filterFixed() {
-  const { group, sev } = state;
-  return (D.fixed || []).filter(x => (!group || x[1] === group) && (!sev || (sev.startsWith("ge") ? x[5] >= +sev[2] : x[5] === +sev[2])));
+  const { sev } = state;
+  // behobene Funde kennen nur die Gruppe, nicht die Tags des Geräts
+  return (D.fixed || []).filter(x => groupOk(x[1]) && (!sev || (sev.startsWith("ge") ? x[5] >= +sev[2] : x[5] === +sev[2])));
 }
 
 function renderNewBox(a) {

@@ -362,7 +362,7 @@ internal sealed partial class TopActionsPage : AsyncListPage
         {
             // new report: the device groups may have changed
             _shownData = data;
-            var filters = new ChoiceFilters([(All, "Alle Gruppen"), .. data.Groups.Select(g => (g, g))]);
+            var filters = new ChoiceFilters([(All, "Alle Gruppen"), .. data.Groups.Select(g => (g, g)), .. data.Groups.Select(g => ($"!{g}", $"außer {g}")), .. data.Tags.Select(t => ($"!#{t}", $"außer Tag {t}"))]);
             filters.Changed += Reload;
             _filters = filters;
             Filters = filters;
@@ -370,7 +370,7 @@ internal sealed partial class TopActionsPage : AsyncListPage
 
         var group = _filters?.CurrentFilterId is { } id && id != All ? id : null;
         var m = new DefenderModel(data, group);
-        var section = $"Maßnahmen nach Priorität{(group is null ? string.Empty : $" · {group}")} · {DefenderModel.Fmt(m.Count)} Funde · Stand {m.Generated.ToLocalTime():g}";
+        var section = $"Maßnahmen nach Priorität{(group is null ? string.Empty : $" · {DefenderModel.FilterLabel(group)}")} · {DefenderModel.Fmt(m.Count)} Funde · Stand {m.Generated.ToLocalTime():g}";
         return new Batch([.. m.Software.Select((a, i) => Items.Software(_context, m, a, $"{i + 1}. {a.Name}", section))]);
     }, token);
 

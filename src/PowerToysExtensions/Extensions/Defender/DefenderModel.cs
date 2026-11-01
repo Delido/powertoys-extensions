@@ -29,6 +29,8 @@ public sealed class DefenderData
 
     public static long EvKey(int d, int s, int v) => ((long)d << 40) | ((long)s << 20) | (uint)v;
 
+    public string[] Tags => [.. Head.Devices.SelectMany(d => d.T).Distinct().Order(StringComparer.Create(CultureInfo.GetCultureInfo("de-DE"), true))];
+
     public string[] Groups => [.. Head.Devices.Select(d => d.G).Distinct().Order(StringComparer.Create(CultureInfo.GetCultureInfo("de-DE"), true))];
 }
 
@@ -95,7 +97,7 @@ public sealed class DeviceAgg
     public int Recent { get; set; }
 }
 
-/// <summary>Aggregates the findings like the HTML report (optionally for one device group).</summary>
+/// <summary>Aggregates the findings like the HTML report, optionally for some devices (see <see cref="Matches"/>).</summary>
 public sealed partial class DefenderModel
 {
     public static readonly string[] SevNames = ["Niedrig", "Mittel", "Hoch", "Kritisch"];
@@ -128,7 +130,7 @@ public sealed partial class DefenderModel
         for (var i = 0; i < total; i++)
         {
             var o = i * ReportBuilder.Fields;
-            if (group is null || raw.Devices[f[o + DefenderData.Dev]].G == group)
+            if (Matches(raw.Devices[f[o + DefenderData.Dev]], group))
             {
                 offsets.Add(o);
             }
@@ -253,6 +255,26 @@ public sealed partial class DefenderModel
     public bool IsDemo => Data.Head.Meta.Demo;
 
     public static string Fmt(double n) => DefenderReport.Fmt(n);
+
+    /// <summary>
+    /// Device filter: null = all, "Gruppe" = this group, "!Gruppe" = all except this group,
+    /// "!#Tag" = all except devices with this tag (e.g. private devices).
+    /// </summary>
+    public static bool Matches(RawDevice device, string? filter)
+    {
+        if (string.IsNullOrEmpty(filter))
+        {
+            return true;
+        }
+
+        var not = filter[0] == '!';
+        var rest = not ? filter[1..] : filter;
+        var hit = rest.StartsWith('#') ? device.T.Contains(rest[1..]) : device.G == rest;
+        return hit != not;
+    }
+
+    public static string FilterLabel(string filter) =>
+        filter.StartsWith("!#", StringComparison.Ordinal) ? $"außer Tag {filter[2..]}" : filter.StartsWith('!') ? $"außer {filter[1..]}" : filter;
 
     public static string Compact(double n) => n >= 10000 ? $"{Fmt(n / 1000)} Tsd." : Fmt(n);
 
