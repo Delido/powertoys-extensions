@@ -18,7 +18,9 @@ public sealed class CheckmkSettings : SettingsBase
     private readonly ChoiceSetSetting _every = new("checkEvery", "Check every", "How often the monitor queries Checkmk", Choices(("1 minute", "1"), ("2 minutes", "2"), ("5 minutes", "5"), ("10 minutes", "10"), ("15 minutes", "15"), ("30 minutes", "30")));
     private readonly ChoiceSetSetting _severity = new("minSeverity", "Minimum severity", "Which service states trigger a notification", Choices(("CRIT only", "crit"), ("CRIT + UNKNOWN", "crit-unknown"), ("WARN, CRIT + UNKNOWN", "warn")));
     private readonly ToggleSetting _hosts = new("includeHosts", "Notify when hosts go DOWN / UNREACHABLE", string.Empty, true);
-    private readonly ToggleSetting _ignoreHandled = new("ignoreHandled", "Ignore acknowledged problems and downtimes", string.Empty, true);
+    private readonly ChoiceSetSetting _stateType = new("stateType", "State type", "SOFT states are still being re-checked and often disappear by themselves; Checkmk itself only notifies on HARD states", Choices(("HARD states only", "hard"), ("HARD and SOFT states", "all")));
+    private readonly ToggleSetting _ignoreAcknowledged = new("ignoreAcknowledged", "Ignore acknowledged problems", string.Empty, true);
+    private readonly ToggleSetting _ignoreDowntimes = new("ignoreDowntimes", "Ignore problems in a downtime", "A service also counts as in downtime while its host is", true);
     private readonly ToggleSetting _recovery = new("notifyRecovery", "Notify when problems recover", string.Empty, false);
     private readonly TextSetting _hostFilter = new("hostFilter", "Only hosts matching", "Optional regular expression (case-insensitive) for host names", string.Empty);
     private readonly TextSetting _serviceFilter = new("serviceFilter", "Only services matching", "Optional regular expression (case-insensitive) for service names", string.Empty);
@@ -35,7 +37,9 @@ public sealed class CheckmkSettings : SettingsBase
         Settings.Add(_every);
         Settings.Add(_severity);
         Settings.Add(_hosts);
-        Settings.Add(_ignoreHandled);
+        Settings.Add(_stateType);
+        Settings.Add(_ignoreAcknowledged);
+        Settings.Add(_ignoreDowntimes);
         Settings.Add(_recovery);
         Settings.Add(_hostFilter);
         Settings.Add(_serviceFilter);
@@ -59,7 +63,11 @@ public sealed class CheckmkSettings : SettingsBase
 
     public bool IncludeHosts => _hosts.Value;
 
-    public bool IgnoreHandled => _ignoreHandled.Value;
+    public bool HardOnly => _stateType.Value != "all";
+
+    public bool IgnoreAcknowledged => _ignoreAcknowledged.Value;
+
+    public bool IgnoreDowntimes => _ignoreDowntimes.Value;
 
     public bool NotifyRecovery => _recovery.Value;
 
@@ -83,9 +91,15 @@ public sealed record Host(
     int NumServicesOk,
     int NumServicesWarn,
     int NumServicesCrit,
-    int NumServicesUnknown)
+    int NumServicesUnknown,
+    int StateType = 1)
 {
-    public bool Handled => Acknowledged > 0 || ScheduledDowntimeDepth > 0;
+    public bool InDowntime => ScheduledDowntimeDepth > 0;
+
+    /// <summary>SOFT: still being re-checked, may go away by itself.</summary>
+    public bool Soft => State != 0 && StateType == 0;
+
+    public bool Handled => Acknowledged > 0 || InDowntime;
 }
 
 public sealed record Service(
@@ -98,9 +112,17 @@ public sealed record Service(
     long LastStateChange,
     long LastCheck,
     int Acknowledged,
-    int ScheduledDowntimeDepth)
+    int ScheduledDowntimeDepth,
+    int StateType = 1,
+    int HostScheduledDowntimeDepth = 0)
 {
-    public bool Handled => Acknowledged > 0 || ScheduledDowntimeDepth > 0;
+    /// <summary>A service is in downtime as well while its host is (Checkmk treats it the same way).</summary>
+    public bool InDowntime => ScheduledDowntimeDepth > 0 || HostScheduledDowntimeDepth > 0;
+
+    /// <summary>SOFT: still being re-checked, may go away by itself.</summary>
+    public bool Soft => State != 0 && StateType == 0;
+
+    public bool Handled => Acknowledged > 0 || InDowntime;
 }
 
 /// <summary>Livestatus query expressions as used by the Checkmk REST API.</summary>
@@ -128,8 +150,8 @@ public static class Q
 
 public sealed class CheckmkApi(CheckmkSettings settings)
 {
-    private static readonly string[] HostColumns = ["name", "alias", "address", "state", "has_been_checked", "plugin_output", "last_state_change", "acknowledged", "scheduled_downtime_depth", "num_services_ok", "num_services_warn", "num_services_crit", "num_services_unknown"];
-    private static readonly string[] ServiceColumns = ["host_name", "description", "state", "has_been_checked", "plugin_output", "long_plugin_output", "last_state_change", "last_check", "acknowledged", "scheduled_downtime_depth"];
+    private static readonly string[] HostColumns = ["name", "alias", "address", "state", "has_been_checked", "plugin_output", "last_state_change", "acknowledged", "scheduled_downtime_depth", "num_services_ok", "num_services_warn", "num_services_crit", "num_services_unknown", "state_type"];
+    private static readonly string[] ServiceColumns = ["host_name", "description", "state", "has_been_checked", "plugin_output", "long_plugin_output", "last_state_change", "last_check", "acknowledged", "scheduled_downtime_depth", "state_type", "host_scheduled_downtime_depth"];
 
     public CheckmkSettings Settings => settings;
 

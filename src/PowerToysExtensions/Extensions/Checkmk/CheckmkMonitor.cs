@@ -171,21 +171,29 @@ internal sealed class CheckmkMonitor(CheckmkApi api) : IDisposable
         var problems = new Dictionary<string, Problem>();
         var down = new HashSet<string>();
 
+        bool Ignored(int acknowledged, bool inDowntime, bool soft) =>
+            (s.IgnoreAcknowledged && acknowledged > 0) || (s.IgnoreDowntimes && inDowntime) || (s.HardOnly && soft);
+
         foreach (var h in await hostsTask)
         {
-            if (h.HasBeenChecked == 0 || hostRe?.IsMatch(h.Name) == false || (s.IgnoreHandled && h.Handled))
+            // services of every host that is down are noise – also when the host itself is not notified
+            if (h.HasBeenChecked > 0)
+            {
+                down.Add(h.Name);
+            }
+
+            if (h.HasBeenChecked == 0 || hostRe?.IsMatch(h.Name) == false || Ignored(h.Acknowledged, h.InDowntime, h.Soft))
             {
                 continue;
             }
 
-            down.Add(h.Name);
             problems[$"host:{h.Name}"] = new(h.Name, HostLabels.GetValueOrDefault(h.State, "DOWN"), h.PluginOutput, api.HostUrl(h.Name), 10);
         }
 
         foreach (var sv in await servicesTask)
         {
             if (sv.HasBeenChecked == 0 || hostRe?.IsMatch(sv.HostName) == false || serviceRe?.IsMatch(sv.Description) == false ||
-                excludeRe?.IsMatch(sv.Description) == true || (s.IgnoreHandled && sv.Handled) || down.Contains(sv.HostName))
+                excludeRe?.IsMatch(sv.Description) == true || Ignored(sv.Acknowledged, sv.InDowntime, sv.Soft) || down.Contains(sv.HostName))
             {
                 continue;
             }

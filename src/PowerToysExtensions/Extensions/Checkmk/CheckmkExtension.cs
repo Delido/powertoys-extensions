@@ -107,8 +107,13 @@ internal static class States
         .ThenBy(s => s.HostName, StringComparer.OrdinalIgnoreCase)
         .ThenBy(s => s.Description, StringComparer.OrdinalIgnoreCase);
 
-    public static IEnumerable<ITag> HandledTags(bool acknowledged, bool downtime)
+    public static IEnumerable<ITag> HandledTags(bool acknowledged, bool downtime, bool soft = false)
     {
+        if (soft)
+        {
+            yield return Ui.Gray("SOFT");
+        }
+
         if (acknowledged)
         {
             yield return Ui.Gray("Acknowledged");
@@ -149,7 +154,7 @@ internal sealed class ItemFactory(CheckmkApi api, Action reload)
             Title = s.Description,
             Subtitle = showHost ? s.HostName : s.PluginOutput,
             Icon = Ui.Glyph(""),
-            Tags = [.. States.HandledTags(s.Acknowledged > 0, s.ScheduledDowntimeDepth > 0), tag, Ui.Tag(States.Age(s.LastStateChange))],
+            Tags = [.. States.HandledTags(s.Acknowledged > 0, s.InDowntime, s.Soft), tag, Ui.Tag(States.Age(s.LastStateChange))],
             Details = new Details
             {
                 Title = $"{s.HostName} – {s.Description}",
@@ -157,7 +162,7 @@ internal sealed class ItemFactory(CheckmkApi api, Action reload)
                 Metadata =
                 [
                     Ui.Label("Host", s.HostName),
-                    Ui.Tags("State", [tag, .. States.HandledTags(s.Acknowledged > 0, s.ScheduledDowntimeDepth > 0)]),
+                    Ui.Tags("State", [tag, .. States.HandledTags(s.Acknowledged > 0, s.InDowntime, s.Soft)]),
                     Ui.Label("In State Since", States.Age(s.LastStateChange)),
                     Ui.Label("Last Check", s.LastCheck > 0 ? DateTimeOffset.FromUnixTimeSeconds(s.LastCheck).ToLocalTime().ToString("g") : null),
                     Ui.Link("Service", url, "Open service"),
@@ -203,7 +208,7 @@ internal sealed class ItemFactory(CheckmkApi api, Action reload)
             Title = h.Name,
             Subtitle = string.Join(" · ", new[] { h.Alias != h.Name ? h.Alias : string.Empty, h.Address }.Where(s => s.Length > 0)),
             Icon = Ui.Glyph(""),
-            Tags = [.. States.HandledTags(h.Acknowledged > 0, h.ScheduledDowntimeDepth > 0), .. counts, States.Host(h)],
+            Tags = [.. States.HandledTags(h.Acknowledged > 0, h.InDowntime, h.Soft), .. counts, States.Host(h)],
             Details = new Details
             {
                 Title = h.Name,
@@ -212,7 +217,7 @@ internal sealed class ItemFactory(CheckmkApi api, Action reload)
                 [
                     Ui.Label("Alias", h.Alias),
                     Ui.Label("Address", h.Address),
-                    Ui.Tags("State", [States.Host(h), .. States.HandledTags(h.Acknowledged > 0, h.ScheduledDowntimeDepth > 0)]),
+                    Ui.Tags("State", [States.Host(h), .. States.HandledTags(h.Acknowledged > 0, h.InDowntime, h.Soft)]),
                     Ui.Label("In State Since", States.Age(h.LastStateChange)),
                     Ui.Label("Services", $"{h.NumServicesOk} OK · {h.NumServicesWarn} WARN · {h.NumServicesCrit} CRIT · {h.NumServicesUnknown} UNKNOWN"),
                 ],
@@ -395,7 +400,7 @@ internal sealed partial class ServicesPage : SearchListPage
         var parts = _filter.CurrentFilterId switch
         {
             "problems" => [Q.Ne("state", "0")],
-            "unhandled" => [Q.Ne("state", "0"), Q.Eq("acknowledged", "0"), Q.Eq("scheduled_downtime_depth", "0")],
+            "unhandled" => [Q.Ne("state", "0"), Q.Eq("acknowledged", "0"), Q.Eq("scheduled_downtime_depth", "0"), Q.Eq("host_scheduled_downtime_depth", "0")],
             "crit" => [Q.Eq("state", "2")],
             "warn" => [Q.Eq("state", "1")],
             "unknown" => [Q.Eq("state", "3")],
