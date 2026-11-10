@@ -82,6 +82,20 @@ internal sealed class CheckmkMonitor(CheckmkApi api) : IDisposable
             var known = ReadKnown();
             File.WriteAllText(_stateFile, JsonSerializer.Serialize(current));
             var total = current.Count;
+
+            // Global switch in Checkmk's Master control: stay quiet like Checkmk. What comes up meanwhile is
+            // remembered as known, so switching notifications on again does not bring a burst of old problems.
+            if (api.Settings.RespectNotifications && await api.GlobalNotificationsEnabled() == false)
+            {
+                StatusChanged?.Invoke($"Quiet – notifications are off in Checkmk · {total} problem{(total == 1 ? string.Empty : "s")} · checked {DateTime.Now:HH:mm}");
+                if (manual)
+                {
+                    Status.Info("Checkmk: notifications are switched off (Master control)");
+                }
+
+                return;
+            }
+
             StatusChanged?.Invoke($"{(api.Settings.MonitorEnabled ? "On" : "Off")} · {total} problem{(total == 1 ? string.Empty : "s")} · checked {DateTime.Now:HH:mm}");
 
             if (known is null)
@@ -171,7 +185,9 @@ internal sealed class CheckmkMonitor(CheckmkApi api) : IDisposable
         var problems = new Dictionary<string, Problem>();
         var down = new HashSet<string>();
 
-        bool Ignored(int acknowledged, bool inDowntime, bool soft) =>
+        // notifications switched off in Checkmk for the host / service (for a service also its host)
+        bool Ignored(int acknowledged, bool inDowntime, bool soft, bool notificationsOff = false) =>
+            (s.RespectNotifications && notificationsOff) ||
             (s.IgnoreAcknowledged && acknowledged > 0) || (s.IgnoreDowntimes && inDowntime) || (s.HardOnly && soft);
 
         foreach (var h in await hostsTask)
@@ -182,7 +198,7 @@ internal sealed class CheckmkMonitor(CheckmkApi api) : IDisposable
                 down.Add(h.Name);
             }
 
-            if (h.HasBeenChecked == 0 || hostRe?.IsMatch(h.Name) == false || Ignored(h.Acknowledged, h.InDowntime, h.Soft))
+            if (h.HasBeenChecked == 0 || hostRe?.IsMatch(h.Name) == false || Ignored(h.Acknowledged, h.InDowntime, h.Soft, h.NotificationsEnabled == 0))
             {
                 continue;
             }
@@ -193,7 +209,7 @@ internal sealed class CheckmkMonitor(CheckmkApi api) : IDisposable
         foreach (var sv in await servicesTask)
         {
             if (sv.HasBeenChecked == 0 || hostRe?.IsMatch(sv.HostName) == false || serviceRe?.IsMatch(sv.Description) == false ||
-                excludeRe?.IsMatch(sv.Description) == true || Ignored(sv.Acknowledged, sv.InDowntime, sv.Soft) || down.Contains(sv.HostName))
+                excludeRe?.IsMatch(sv.Description) == true || Ignored(sv.Acknowledged, sv.InDowntime, sv.Soft, sv.NotificationsEnabled == 0 || sv.HostNotificationsEnabled == 0) || down.Contains(sv.HostName))
             {
                 continue;
             }

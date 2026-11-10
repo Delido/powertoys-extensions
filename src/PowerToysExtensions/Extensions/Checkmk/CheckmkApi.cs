@@ -19,6 +19,7 @@ public sealed class CheckmkSettings : SettingsBase
     private readonly ChoiceSetSetting _severity = new("minSeverity", "Minimum severity", "Which service states trigger a notification", Choices(("CRIT only", "crit"), ("CRIT + UNKNOWN", "crit-unknown"), ("WARN, CRIT + UNKNOWN", "warn")));
     private readonly ToggleSetting _hosts = new("includeHosts", "Notify when hosts go DOWN / UNREACHABLE", string.Empty, true);
     private readonly ChoiceSetSetting _stateType = new("stateType", "State type", "SOFT states are still being re-checked and often disappear by themselves; Checkmk itself only notifies on HARD states", Choices(("HARD states only", "hard"), ("HARD and SOFT states", "all")));
+    private readonly ToggleSetting _respectNotifications = new("respectNotifications", "Stay quiet where Checkmk does not notify", "No notification while notifications are switched off globally (Master control – the Checkmk user needs the permission for the Master control snap-in) or for the host / service (a service also when its host has notifications off)", true);
     private readonly ToggleSetting _ignoreAcknowledged = new("ignoreAcknowledged", "Ignore acknowledged problems", string.Empty, true);
     private readonly ToggleSetting _ignoreDowntimes = new("ignoreDowntimes", "Ignore problems in a downtime", "A service also counts as in downtime while its host is", true);
     private readonly ToggleSetting _recovery = new("notifyRecovery", "Notify when problems recover", string.Empty, false);
@@ -38,6 +39,7 @@ public sealed class CheckmkSettings : SettingsBase
         Settings.Add(_severity);
         Settings.Add(_hosts);
         Settings.Add(_stateType);
+        Settings.Add(_respectNotifications);
         Settings.Add(_ignoreAcknowledged);
         Settings.Add(_ignoreDowntimes);
         Settings.Add(_recovery);
@@ -64,6 +66,8 @@ public sealed class CheckmkSettings : SettingsBase
     public bool IncludeHosts => _hosts.Value;
 
     public bool HardOnly => _stateType.Value != "all";
+
+    public bool RespectNotifications => _respectNotifications.Value;
 
     public bool IgnoreAcknowledged => _ignoreAcknowledged.Value;
 
@@ -92,7 +96,8 @@ public sealed record Host(
     int NumServicesWarn,
     int NumServicesCrit,
     int NumServicesUnknown,
-    int StateType = 1)
+    int StateType = 1,
+    int NotificationsEnabled = 1)
 {
     public bool InDowntime => ScheduledDowntimeDepth > 0;
 
@@ -114,7 +119,9 @@ public sealed record Service(
     int Acknowledged,
     int ScheduledDowntimeDepth,
     int StateType = 1,
-    int HostScheduledDowntimeDepth = 0)
+    int HostScheduledDowntimeDepth = 0,
+    int NotificationsEnabled = 1,
+    int HostNotificationsEnabled = 1)
 {
     /// <summary>A service is in downtime as well while its host is (Checkmk treats it the same way).</summary>
     public bool InDowntime => ScheduledDowntimeDepth > 0 || HostScheduledDowntimeDepth > 0;
@@ -148,10 +155,10 @@ public static class Q
     public static string Escape(string text) => Regex.Escape(text).Replace("]", "\\]", StringComparison.Ordinal);
 }
 
-public sealed class CheckmkApi(CheckmkSettings settings)
+public sealed partial class CheckmkApi(CheckmkSettings settings)
 {
-    private static readonly string[] HostColumns = ["name", "alias", "address", "state", "has_been_checked", "plugin_output", "last_state_change", "acknowledged", "scheduled_downtime_depth", "num_services_ok", "num_services_warn", "num_services_crit", "num_services_unknown", "state_type"];
-    private static readonly string[] ServiceColumns = ["host_name", "description", "state", "has_been_checked", "plugin_output", "long_plugin_output", "last_state_change", "last_check", "acknowledged", "scheduled_downtime_depth", "state_type", "host_scheduled_downtime_depth"];
+    private static readonly string[] HostColumns = ["name", "alias", "address", "state", "has_been_checked", "plugin_output", "last_state_change", "acknowledged", "scheduled_downtime_depth", "num_services_ok", "num_services_warn", "num_services_crit", "num_services_unknown", "state_type", "notifications_enabled"];
+    private static readonly string[] ServiceColumns = ["host_name", "description", "state", "has_been_checked", "plugin_output", "long_plugin_output", "last_state_change", "last_check", "acknowledged", "scheduled_downtime_depth", "state_type", "host_scheduled_downtime_depth", "notifications_enabled", "host_notifications_enabled"];
 
     public CheckmkSettings Settings => settings;
 
@@ -181,6 +188,50 @@ public sealed class CheckmkApi(CheckmkSettings settings)
         body["end_time"] = start.AddMinutes(minutes).ToString("o");
         body["comment"] = comment;
         return Post($"domain-types/downtime/collections/{(service is null ? "host" : "service")}", body);
+    }
+
+    /// <summary>
+    /// The global "Notifications" switch of the Master control, or null when it cannot be read. Checkmk 3.0
+    /// has a REST endpoint; older versions are read from the Master control snap-in, whose toggle links
+    /// carry "switch=enable_notifications&amp;state=&lt;target&gt;" (target 1 = currently off).
+    /// </summary>
+    public async Task<bool?> GlobalNotificationsEnabled(CancellationToken token = default)
+    {
+        try
+        {
+            var result = await Http.GetJson<JsonObject>(Client, Request(HttpMethod.Get, "domain-types/master_control/collections/all"), token);
+            var states = (result["value"] as JsonArray ?? []).Select(v => v?["extensions"]?["notifications"]?.GetValue<bool>()).OfType<bool>().ToArray();
+            if (states.Length > 0)
+            {
+                return states.Any(s => s);
+            }
+        }
+        catch (Exception ex) when (ex is ApiException or InvalidOperationException or System.Text.Json.JsonException)
+        {
+            // older Checkmk
+        }
+
+        try
+        {
+            var request = Http.Request(HttpMethod.Get, $"{settings.SiteUrl}/check_mk/sidebar_snapin.py?names=master_control", settings.Auth);
+            using var response = await Http.Send(Client, request, token);
+            var html = await response.Content.ReadAsStringAsync(token);
+            var targets = MasterSwitch().Matches(html)
+                .Select(m => System.Web.HttpUtility.ParseQueryString(m.Groups[1].Value.Replace("&amp;", "&", StringComparison.Ordinal)))
+                .Where(q => q["switch"] == "enable_notifications")
+                .Select(q => q["state"])
+                .ToArray();
+            if (targets.Length > 0)
+            {
+                return targets.Any(t => t == "0");
+            }
+        }
+        catch (Exception ex) when (ex is ApiException or InvalidOperationException)
+        {
+            // no access to the snap-in
+        }
+
+        return null;
     }
 
     public string HostUrl(string host) => View($"view.py?view_name=host&host={Uri.EscapeDataString(host)}");
@@ -222,6 +273,9 @@ public sealed class CheckmkApi(CheckmkSettings settings)
 
         return Http.Request(method, $"{settings.SiteUrl}/check_mk/api/1.0/{path}", settings.Auth);
     }
+
+    [GeneratedRegex(@"switch_master_state\.py\?([^'""\s]*)")]
+    private static partial Regex MasterSwitch();
 
     private sealed record CollectionResult<T>(Entry<T>[] Value);
 
